@@ -22,9 +22,9 @@ function SplashScreen({ onContinue }) {
     }}>
       {/* HERO — illustrated wordmark + scene, fills the upper portion */}
       <div style={{
-        position: 'absolute', top: 0, left: 0, right: 0,
-        height: '62%',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        position: 'absolute', top: 50, left: 0, right: 0,
+        height: 540,
+        display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
         background: '#FFFFFF',
         transform: zooming ? 'scale(1.06)' : 'scale(1)',
         transition: 'transform 0.5s ease',
@@ -34,8 +34,8 @@ function SplashScreen({ onContinue }) {
           src={SPLASH_HERO_DATA_URL}
           alt="PawMatch"
           style={{
-            width: '100%', height: '100%',
-            objectFit: 'cover', objectPosition: 'center 38%',
+            width: '100%', height: 'auto',
+            objectFit: 'contain', objectPosition: 'center top',
             display: 'block',
           }}
         />
