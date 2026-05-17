@@ -126,6 +126,12 @@ function ShelterAppReviewScreen({ app, onBack, goto, setTab }) {
   const stageIdx = APP_STAGES.findIndex(s => s.key === (app && app.stage)) || 0;
   const [activeStage, setActiveStage] = React.useState(Math.max(0, stageIdx));
   const [decision, setDecision] = React.useState(null); // null | 'approved' | 'declined'
+  const [pickedSlot, setPickedSlot] = React.useState(null);
+  const demoState = (typeof useDemoState === 'function') ? useDemoState() : null;
+  const isSarah = !!(app && app.applicant === 'Sarah Chen');
+  // Only Sarah's row is plumbed into the live demo state; everyone else is local.
+  const sentTime    = isSarah && demoState ? demoState.meetingTime     : null;
+  const sentAccepted = isSarah && demoState ? demoState.meetingAccepted : false;
 
   if (!app) {
     return (
@@ -198,7 +204,12 @@ function ShelterAppReviewScreen({ app, onBack, goto, setTab }) {
 
       <div style={{ flex: 1, overflow: 'auto', padding: '12px 20px 120px' }}>
         {sm.key === 'pre-app'   && <PreAppPanel app={app}/>}
-        {sm.key === 'scheduled' && <ScheduledPanel app={app}/>}
+        {sm.key === 'scheduled' && <ScheduledPanel
+            app={app}
+            isSarah={isSarah}
+            pickedSlot={pickedSlot} setPickedSlot={setPickedSlot}
+            sentTime={sentTime} sentAccepted={sentAccepted}
+        />}
         {sm.key === 'meeting'   && <MeetingPanel  app={app}/>}
         {sm.key === 'approved'  && <ApprovedPanel app={app}/>}
 
@@ -219,38 +230,150 @@ function ShelterAppReviewScreen({ app, onBack, goto, setTab }) {
         )}
       </div>
 
-      {/* sticky decision bar */}
-      <div style={{
-        position: 'absolute', left: 0, right: 0, bottom: 0,
-        padding: '12px 20px 28px', background: '#FFFFFFF2',
-        borderTop: `1px solid ${PM.line}`,
-        display: 'flex', gap: 8,
-      }}>
-        <button onClick={() => { setTab('chat'); goto('chatThread', { pet: app.petKey }); }} style={{
-          flex: 1, height: 50, borderRadius: 25,
-          background: 'transparent', color: PM.night, border: `1.5px solid ${PM.ink}`,
-          fontFamily: FONT_BODY, fontSize: 14, fontWeight: 600, cursor: 'pointer',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-        }}>
-          <svg width="14" height="14" viewBox="0 0 22 22" fill="none">
-            <path d="M4 6 Q 4 4, 6 4 L 16 4 Q 18 4, 18 6 L 18 13 Q 18 15, 16 15 L 9 15 L 5 18 L 5 15 Q 4 15, 4 13 Z" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinejoin="round"/>
-          </svg>
-          Message
-        </button>
-        <button onClick={() => setDecision('declined')} style={{
-          flex: 1, height: 50, borderRadius: 25,
-          background: 'transparent', color: PM.inkSoft, border: `1.5px solid ${PM.line}`,
-          fontFamily: FONT_BODY, fontSize: 14, fontWeight: 600, cursor: 'pointer',
-        }}>Decline</button>
-        <button onClick={() => setDecision('approved')} style={{
-          flex: 1.6, height: 50, borderRadius: 25,
-          background: PM.coral, color: '#FFF', border: 'none',
-          fontFamily: FONT_BODY, fontSize: 14, fontWeight: 600, cursor: 'pointer',
-          boxShadow: '0 6px 16px rgba(255,0,131,0.34)',
-        }}>Approve →</button>
-      </div>
+      {/* sticky decision bar — stage-aware */}
+      <ReviewBottomBar
+        stageKey={sm.key}
+        app={app}
+        isSarah={isSarah}
+        pickedSlot={pickedSlot}
+        sentTime={sentTime}
+        sentAccepted={sentAccepted}
+        onMessage={() => { setTab('chat'); goto('chatThread', { pet: app.petKey }); }}
+        onDecline={() => setDecision('declined')}
+        onApprove={() => {
+          setDecision('approved');
+          // Jump the stepper to Approved so the panel + bar update immediately.
+          const idx = APP_STAGES.findIndex(s => s.key === 'approved');
+          if (idx >= 0) setActiveStage(idx);
+        }}
+        onSendMeeting={() => {
+          if (!pickedSlot) return;
+          if (isSarah && window.__pmDemoActions) {
+            window.__pmDemoActions.sendMeeting(pickedSlot);
+          }
+        }}
+        onCancelMeeting={() => {
+          setPickedSlot(null);
+          if (isSarah && window.__pmDemoActions) {
+            window.__pmDemoActions.cancelMeeting();
+          }
+        }}
+        onReschedule={() => {
+          // Reset the sent state and let the user re-pick.  Keep panel open.
+          if (isSarah && window.__pmDemoActions) {
+            window.__pmDemoActions.cancelMeeting();
+          }
+        }}
+      />
     </div>
   );
+}
+
+// ─── Stage-aware sticky bottom bar ──────────────────────────
+
+function ReviewBottomBar(props) {
+  const {
+    stageKey, isSarah, pickedSlot, sentTime, sentAccepted,
+    onMessage, onDecline, onApprove,
+    onSendMeeting, onCancelMeeting, onReschedule,
+  } = props;
+
+  const bar = (children) => (
+    <div style={{
+      position: 'absolute', left: 0, right: 0, bottom: 0,
+      padding: '12px 20px 28px', background: '#FFFFFFF2',
+      borderTop: `1px solid ${PM.line}`,
+      display: 'flex', gap: 8,
+    }}>{children}</div>
+  );
+
+  const messageBtn = (
+    <button onClick={onMessage} style={{
+      flex: 1, height: 50, borderRadius: 25,
+      background: 'transparent', color: PM.night, border: `1.5px solid ${PM.ink}`,
+      fontFamily: FONT_BODY, fontSize: 14, fontWeight: 600, cursor: 'pointer',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+    }}>
+      <svg width="14" height="14" viewBox="0 0 22 22" fill="none">
+        <path d="M4 6 Q 4 4, 6 4 L 16 4 Q 18 4, 18 6 L 18 13 Q 18 15, 16 15 L 9 15 L 5 18 L 5 15 Q 4 15, 4 13 Z" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinejoin="round"/>
+      </svg>
+      Message
+    </button>
+  );
+  const declineBtn = (
+    <button onClick={onDecline} style={{
+      flex: 1, height: 50, borderRadius: 25,
+      background: 'transparent', color: PM.inkSoft, border: `1.5px solid ${PM.line}`,
+      fontFamily: FONT_BODY, fontSize: 14, fontWeight: 600, cursor: 'pointer',
+    }}>Decline</button>
+  );
+  const approveBtn = (
+    <button onClick={onApprove} style={{
+      flex: 1.6, height: 50, borderRadius: 25,
+      background: PM.coral, color: '#FFF', border: 'none',
+      fontFamily: FONT_BODY, fontSize: 14, fontWeight: 600, cursor: 'pointer',
+      boxShadow: '0 6px 16px rgba(255,0,131,0.34)',
+    }}>Approve →</button>
+  );
+
+  if (stageKey === 'pre-app') return bar([
+    React.cloneElement(messageBtn, { key: 'm' }),
+    React.cloneElement(declineBtn, { key: 'd' }),
+  ]);
+
+  if (stageKey === 'scheduled') {
+    let middle;
+    if (sentTime) {
+      // After sending the time, split the middle slot into Reschedule + Cancel.
+      middle = (
+        <div key="middle" style={{ flex: 1.6, display: 'flex', gap: 6 }}>
+          <button onClick={onReschedule} style={{
+            flex: 1, height: 50, borderRadius: 25,
+            background: PM.night, color: PM.cream, border: 'none',
+            fontFamily: FONT_BODY, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+          }}>Reschedule</button>
+          <button onClick={onCancelMeeting} style={{
+            flex: 1, height: 50, borderRadius: 25,
+            background: 'transparent', color: PM.inkSoft, border: `1.5px solid ${PM.line}`,
+            fontFamily: FONT_BODY, fontSize: 12, fontWeight: 500, cursor: 'pointer',
+          }}>Cancel</button>
+        </div>
+      );
+    } else {
+      const canSend = !!pickedSlot;
+      middle = (
+        <button key="middle" onClick={onSendMeeting} disabled={!canSend} style={{
+          flex: 1.6, height: 50, borderRadius: 25,
+          background: canSend ? PM.coral : '#FFB8DA', color: '#FFF', border: 'none',
+          cursor: canSend ? 'pointer' : 'not-allowed',
+          fontFamily: FONT_BODY, fontSize: 14, fontWeight: 600,
+          boxShadow: canSend ? '0 6px 16px rgba(255,0,131,0.34)' : 'none',
+        }}>
+          {canSend ? 'Send meeting time →' : 'Pick a slot ↑'}
+        </button>
+      );
+    }
+    return bar([
+      React.cloneElement(messageBtn, { key: 'm' }),
+      middle,
+      React.cloneElement(declineBtn, { key: 'd' }),
+    ]);
+  }
+
+  if (stageKey === 'meeting') return bar([
+    React.cloneElement(messageBtn, { key: 'm' }),
+    React.cloneElement(declineBtn, { key: 'd' }),
+    React.cloneElement(approveBtn, { key: 'a' }),
+  ]);
+
+  if (stageKey === 'approved') return bar([
+    React.cloneElement(messageBtn, { key: 'm', style: {
+      ...messageBtn.props.style,
+      flex: 1, background: PM.mint + '15', color: '#1E8A5A', border: `1.5px solid ${PM.mint}`,
+    }}),
+  ]);
+
+  return bar([]);
 }
 
 function ReviewSection({ title, hint, children }) {
@@ -304,19 +427,65 @@ function PreAppPanel({ app }) {
   );
 }
 
-function ScheduledPanel({ app }) {
+function ScheduledPanel({ app, isSarah, pickedSlot, setPickedSlot, sentTime, sentAccepted }) {
+  const slots = ['Sat Apr 12 · 2:00 PM','Sun Apr 13 · 11:00 AM','Wed Apr 16 · 5:30 PM','Sat Apr 19 · 2:00 PM'];
   return (
     <>
+      {/* Status card — shows whenever a meeting time has been sent */}
+      {sentTime && (
+        <div style={{
+          padding: 16, borderRadius: 18, marginBottom: 14,
+          background: sentAccepted ? '#E6F8EF' : `${PM.gold}1F`,
+          borderLeft: `3px solid ${sentAccepted ? PM.mint : PM.gold}`,
+        }}>
+          <div style={{
+            fontFamily: FONT_MONO, fontSize: 10, letterSpacing: 1.2, textTransform: 'uppercase', fontWeight: 700,
+            color: sentAccepted ? '#1E6B4D' : '#9A6A00',
+            display: 'flex', alignItems: 'center', gap: 6,
+          }}>
+            <span style={{
+              width: 8, height: 8, borderRadius: 4,
+              background: sentAccepted ? PM.mint : PM.gold,
+            }}/>
+            {sentAccepted ? 'Adopter confirmed' : 'Sent · awaiting confirmation'}
+          </div>
+          <div style={{ marginTop: 6, fontFamily: FONT_DISPLAY, fontSize: 20, color: PM.night, letterSpacing: -0.3 }}>
+            {sentTime}
+          </div>
+          <div style={{ marginTop: 2, fontFamily: FONT_BODY, fontSize: 12, color: PM.inkSoft }}>
+            {sentAccepted
+              ? `${app.applicant} confirmed — we'll send a calendar invite and directions automatically.`
+              : `${app.applicant} will see this on their adopter app — they can accept or request a different time.`}
+          </div>
+        </div>
+      )}
+
       <ReviewSection title="Schedule a meet & greet" hint="In-person">
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {['Sat Apr 12 · 2:00 PM','Sun Apr 13 · 11:00 AM','Wed Apr 16 · 5:30 PM','Sat Apr 19 · 2:00 PM'].map(s => (
-            <Chip key={s}>{s}</Chip>
-          ))}
+          {slots.map(s => {
+            const isSent     = sentTime === s;
+            const isSelected = pickedSlot === s;
+            return (
+              <Chip key={s}
+                selected={isSent || isSelected}
+                onClick={() => {
+                  // Don't reshuffle the selection if a meeting time is already out
+                  if (sentTime) return;
+                  setPickedSlot && setPickedSlot(s);
+                }}
+              >
+                {isSent ? '● ' : ''}{s}
+              </Chip>
+            );
+          })}
         </div>
         <div style={{ marginTop: 12, fontFamily: FONT_BODY, fontSize: 12, color: PM.inkSoft, lineHeight: 1.5 }}>
-          Pick a slot or message the applicant directly. We'll send confirmation + directions automatically.
+          {sentTime
+            ? 'Use Reschedule below to pick a different slot, or Cancel to retract this proposal.'
+            : 'Pick a slot, then tap Send meeting time. The applicant gets a push notification with Accept / Suggest new time.'}
         </div>
       </ReviewSection>
+
       <ReviewSection title="Pre-screening summary">
         <FactRow label="Household" value={app.household}/>
         <FactRow label="Location"  value={app.location}/>

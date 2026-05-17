@@ -21,7 +21,9 @@ if (!window.__pmDemoState) {
     shelterVisible:  false,
     sarahSubmitted:  false,
     shelterMessaged: false,
-    sarahJustArrived: false,   // transient — drives the slide-in animation
+    sarahJustArrived: false,    // transient — drives the slide-in animation
+    meetingTime:     null,      // string when shelter has sent a proposed slot
+    meetingAccepted: false,     // adopter has tapped Accept on their side
   };
 }
 
@@ -48,12 +50,30 @@ window.__pmDemoActions = {
     window.__pmDemoState.shelterMessaged = true;
     pmBroadcastDemo();
   },
+  sendMeeting(time) {
+    window.__pmDemoState.meetingTime = time;
+    window.__pmDemoState.meetingAccepted = false;
+    pmBroadcastDemo();
+  },
+  cancelMeeting() {
+    window.__pmDemoState.meetingTime = null;
+    window.__pmDemoState.meetingAccepted = false;
+    pmBroadcastDemo();
+  },
+  acceptMeeting() {
+    if (window.__pmDemoState.meetingTime) {
+      window.__pmDemoState.meetingAccepted = true;
+      pmBroadcastDemo();
+    }
+  },
   reset() {
     window.__pmDemoState = {
       shelterVisible:  false,
       sarahSubmitted:  false,
       shelterMessaged: false,
       sarahJustArrived: false,
+      meetingTime:     null,
+      meetingAccepted: false,
     };
     pmBroadcastDemo();
   },

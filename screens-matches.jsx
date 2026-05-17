@@ -89,10 +89,12 @@ function MatchRow({ petKey, met, total, status, age, onClick }) {
   const isReady = status === 'ready';
   const effective = (isReady && phase === 'done') ? 'submitted' : status;
 
-  // Cross-end demo: when shelter has messaged Sarah, the Poppy row shows
-  // "Shelter replied" instead of the regular awaiting copy.
+  // Cross-end demo: surface shelter activity on Poppy's row.
   const demoState = (typeof useDemoState === 'function') ? useDemoState() : null;
-  const shelterReplied = !!(demoState && demoState.shelterMessaged && petKey === 'poppy');
+  const isPoppy = petKey === 'poppy';
+  const shelterReplied   = !!(demoState && demoState.shelterMessaged && isPoppy);
+  const meetingTime      = (demoState && isPoppy) ? demoState.meetingTime : null;
+  const meetingAccepted  = !!(demoState && isPoppy && demoState.meetingAccepted);
 
   // Reset local Submit animation state when the demo is reset, so Poppy's
   // row returns to its initial "Ready to submit" appearance on the next render.
@@ -102,10 +104,17 @@ function MatchRow({ petKey, met, total, status, age, onClick }) {
     }
   }, [demoState ? demoState.sarahSubmitted : null]);
 
-  const submittedTag = shelterReplied
-    ? '● Shelter replied · open conversation'
-    : (phase === 'done' ? 'Just submitted · awaiting' : `Submitted ${age} · awaiting`);
-  const submittedColor = shelterReplied ? PM.mint : PM.violet;
+  let submittedTag, submittedColor;
+  if (meetingTime && meetingAccepted) {
+    submittedTag = '● Meeting confirmed';                       submittedColor = PM.mint;
+  } else if (meetingTime) {
+    submittedTag = '📅 Meeting proposed · tap Accept →';        submittedColor = PM.coral;
+  } else if (shelterReplied) {
+    submittedTag = '● Shelter replied · open conversation';     submittedColor = PM.mint;
+  } else {
+    submittedTag = phase === 'done' ? 'Just submitted · awaiting' : `Submitted ${age} · awaiting`;
+    submittedColor = PM.violet;
+  }
 
   const config = {
     incomplete: { tag: `${total - met} fields missing`, tagColor: PM.gold,   cta: 'Continue', variant: 'outline' },
@@ -192,18 +201,37 @@ function MatchRow({ petKey, met, total, status, age, onClick }) {
           <div style={{ fontFamily: FONT_BODY, fontSize: 11, color: PM.inkSoft }}>{config.tag}</div>
         </div>
       </div>
-      <div className={`pm-cta ${submitting ? 'pm-cta-submitting' : ''}`} style={{
-        ...baseCtaStyle,
-        fontFamily: FONT_BODY, fontSize: 12, fontWeight: 600, flexShrink: 0,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        overflow: 'hidden', whiteSpace: 'nowrap',
-      }}>
-        {submitting ? (
-          <svg className="pm-check" width="18" height="18" viewBox="0 0 18 18" fill="none">
-            <path d="M3 9 L 7.5 13 L 15 5" stroke="#FFF" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        ) : config.cta}
-      </div>
+      {meetingTime && !meetingAccepted && !submitting ? (
+        // Accept-the-meeting affordance — replaces the right CTA while the
+        // adopter hasn't responded yet. Uses a span so we don't nest <button>.
+        <span
+          role="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (window.__pmDemoActions) window.__pmDemoActions.acceptMeeting();
+          }}
+          style={{
+            padding: '8px 14px', borderRadius: 14, flexShrink: 0,
+            background: PM.coral, color: '#FFF',
+            fontFamily: FONT_BODY, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+            boxShadow: '0 4px 10px rgba(255,0,131,0.32)',
+          }}
+        >Accept ✓</span>
+      ) : (
+        <div className={`pm-cta ${submitting ? 'pm-cta-submitting' : ''}`} style={{
+          ...baseCtaStyle,
+          fontFamily: FONT_BODY, fontSize: 12, fontWeight: 600, flexShrink: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          overflow: 'hidden', whiteSpace: 'nowrap',
+        }}>
+          {submitting ? (
+            <svg className="pm-check" width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <path d="M3 9 L 7.5 13 L 15 5" stroke="#FFF" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          ) : config.cta}
+        </div>
+      )}
     </button>
   );
 }

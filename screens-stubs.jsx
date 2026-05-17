@@ -392,12 +392,14 @@ function PlanCard({ id, name, price, tag, items, selected, onClick }) {
 // ─── Pet care wrapper · 3 sub-tabs (Insurance / Find a vet / Claims) ─
 
 // Mock claims copied from the vet side, filtered to Sarah Chen's view.
+// Poppy's claim has been pushed straight to the Payout / Approved stage so
+// the demo can highlight the "money landed" moment instead of the wait.
 const ADOPTER_CLAIMS = [
   {
     id: 'LEM-2026-04-16-001', petName: 'Poppy',
     provider: 'Lemonade Pet · Plus', amount: 265.00, copay: 25.00, payout: 240.00,
     visit: 'Wed Apr 16, 2026 · Wellness · Forest Park Veterinary',
-    submittedAge: 'Just now', status: 'Pending',
+    submittedAge: 'Earlier today', status: 'Approved',
     items: [
       { label: 'Wellness exam · Dr. Patel',  charge: 95.00 },
       { label: 'New-patient intake',          charge: 35.00 },
@@ -406,9 +408,9 @@ const ADOPTER_CLAIMS = [
       { label: 'Heartworm/parasite screen (4Dx)', charge: 60.00 },
     ],
     timeline: [
-      { label: 'Submitted by Dr. Patel', when: 'Just now',          done: true  },
-      { label: 'Under review',           when: 'expected today',     done: false },
-      { label: 'Payout',                 when: '~3 business days',   done: false },
+      { label: 'Submitted by Dr. Patel', when: '2h ago',          done: true },
+      { label: 'Under review',           when: '1h ago',          done: true },
+      { label: 'Payout',                 when: '$240.00 paid',    done: true },
     ],
   },
 ];
