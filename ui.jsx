@@ -306,6 +306,57 @@ function PetPhotoSlot({ petKey, label = "PHOTO", size = "100%", bg = "#F2F2F2", 
   );
 }
 
+// ─── Splash animation FX ───────────────────────────────────
+// Floating hearts + twinkling sparkles + gentle bob, layered over the splash
+// hero image. The image itself is a flat JPEG, so we keep the motion in cute
+// overlay elements that read as "alive" without overdoing it.
+
+function SplashFX() {
+  return (
+    <>
+      <style>{`
+        @keyframes pm-bob {
+          0%, 100% { transform: translateY(0); }
+          50%      { transform: translateY(-7px); }
+        }
+        @keyframes pm-heart-float {
+          0%   { transform: translateY(24px) scale(0.55) rotate(-6deg); opacity: 0; }
+          14%  { opacity: 0.95; }
+          100% { transform: translateY(-200px) scale(1.05) rotate(8deg); opacity: 0; }
+        }
+        @keyframes pm-twinkle {
+          0%, 100% { transform: scale(0.35) rotate(0deg);   opacity: 0; }
+          50%      { transform: scale(1.05) rotate(180deg); opacity: 1; }
+        }
+        @keyframes pm-headline-pop {
+          0%, 100% { transform: scale(1); }
+          50%      { transform: scale(1.045); }
+        }
+        .pm-hero-img      { animation: pm-bob 5.4s ease-in-out infinite; }
+        .pm-fx            { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+        .pm-fx .pm-heart  { position: absolute; top: 70%; font-size: 18px; color: #FF4FA0;
+                            text-shadow: 0 2px 8px rgba(255,79,160,0.42);
+                            opacity: 0; animation: pm-heart-float 4.6s ease-in-out infinite; }
+        .pm-fx .pm-spark  { position: absolute; font-size: 16px; color: #FFB800;
+                            text-shadow: 0 1px 4px rgba(255,184,0,0.35);
+                            opacity: 0; animation: pm-twinkle 2.6s ease-in-out infinite; }
+        .pm-headline-pop  { display: inline-block; animation: pm-headline-pop 3.4s ease-in-out infinite;
+                            transform-origin: center; }
+      `}</style>
+      <div className="pm-fx">
+        <span className="pm-heart" style={{ left: '18%', animationDelay: '0s'   }}>♥</span>
+        <span className="pm-heart" style={{ left: '50%', animationDelay: '1.6s' }}>♥</span>
+        <span className="pm-heart" style={{ left: '78%', animationDelay: '3.2s' }}>♥</span>
+
+        <span className="pm-spark" style={{ left:  '8%', top: '10%', animationDelay: '0s'   }}>✦</span>
+        <span className="pm-spark" style={{ left: '88%', top: '14%', animationDelay: '0.7s' }}>✦</span>
+        <span className="pm-spark" style={{ left: '14%', top: '48%', animationDelay: '1.4s' }}>✦</span>
+        <span className="pm-spark" style={{ left: '84%', top: '52%', animationDelay: '2.1s' }}>✦</span>
+      </div>
+    </>
+  );
+}
+
 // ─── Empty state ───────────────────────────────────────────
 
 function EmptyState({ title, sub, cta, onCta, icon }) {
@@ -356,5 +407,5 @@ function EmptyState({ title, sub, cta, onCta, icon }) {
 
 Object.assign(window, {
   PM, FONT_DISPLAY, FONT_SERIF, FONT_BODY, FONT_MONO,
-  PMButton, Chip, Surface, PetPortrait, PetPhotoSlot, TabBar, TopBar, EmptyState,
+  PMButton, Chip, Surface, PetPortrait, PetPhotoSlot, TabBar, TopBar, EmptyState, SplashFX,
 });

@@ -28,6 +28,7 @@ function ShelterSplashScreen({ onContinue }) {
         overflow: 'hidden',
       }}>
         <img
+          className="pm-hero-img"
           src={SPLASH_HERO_DATA_URL_SHELTER}
           alt="PawMatch for Shelters"
           style={{
@@ -36,6 +37,7 @@ function ShelterSplashScreen({ onContinue }) {
             display: 'block',
           }}
         />
+        <SplashFX/>
         {/* shelter badge — pinned to the bottom of the hero so it sits below the artwork */}
         <div style={{
           position: 'absolute', bottom: 18, left: 18,
@@ -67,7 +69,7 @@ function ShelterSplashScreen({ onContinue }) {
             letterSpacing: -0.8, lineHeight: 1.02, color: '#1F1F3A',
           }}>
             More homes,<br/>
-            <em style={{ color: '#FF4FA0' }}>less paperwork</em>.
+            <em className="pm-headline-pop" style={{ color: '#FF4FA0' }}>less paperwork</em>.
           </h1>
           <div style={{
             marginTop: 12, fontFamily: FONT_BODY, fontSize: 14, color: '#5F5F7A', lineHeight: 1.4,

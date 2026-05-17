@@ -31,6 +31,7 @@ function SplashScreen({ onContinue }) {
         overflow: 'hidden',
       }}>
         <img
+          className="pm-hero-img"
           src={SPLASH_HERO_DATA_URL}
           alt="PawMatch"
           style={{
@@ -39,6 +40,7 @@ function SplashScreen({ onContinue }) {
             display: 'block',
           }}
         />
+        <SplashFX/>
       </div>
 
       {/* CTA CARD — cream card, overlaps hero from the bottom */}
@@ -59,7 +61,7 @@ function SplashScreen({ onContinue }) {
             letterSpacing: -0.8, lineHeight: 1.02, color: '#1F1F3A',
           }}>
             Find your<br/>
-            <em style={{ color: '#FF4FA0' }}>perfect match</em>.
+            <em className="pm-headline-pop" style={{ color: '#FF4FA0' }}>perfect match</em>.
           </h1>
           <div style={{
             marginTop: 12, fontFamily: FONT_BODY, fontSize: 14, color: '#5F5F7A', lineHeight: 1.4,

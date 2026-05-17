@@ -22,9 +22,10 @@ function VetSplashScreen({ onContinue }) {
         transform: zooming ? 'scale(1.06)' : 'scale(1)',
         transition: 'transform 0.5s ease', overflow: 'hidden',
       }}>
-        <img src={SPLASH_HERO_DATA_URL_VET} alt="PawMatch for Vets" style={{
+        <img className="pm-hero-img" src={SPLASH_HERO_DATA_URL_VET} alt="PawMatch for Vets" style={{
           width: '100%', height: 'auto', objectFit: 'contain', objectPosition: 'center top', display: 'block',
         }}/>
+        <SplashFX/>
         <div style={{
           position: 'absolute', bottom: 18, left: 18,
           padding: '6px 12px', borderRadius: 14,
@@ -54,7 +55,7 @@ function VetSplashScreen({ onContinue }) {
             letterSpacing: -0.8, lineHeight: 1.02, color: '#1F1F3A',
           }}>
             AI notes,<br/>
-            <em style={{ color: '#FF4FA0' }}>instant claims</em>.
+            <em className="pm-headline-pop" style={{ color: '#FF4FA0' }}>instant claims</em>.
           </h1>
           <div style={{
             marginTop: 12, fontFamily: FONT_BODY, fontSize: 14, color: '#5F5F7A', lineHeight: 1.4,
