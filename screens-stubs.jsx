@@ -22,7 +22,7 @@ function StubScreen({ title, subtitle, goto, tab, setTab, children, body }) {
 
 // ─── Find a Vet ────────────────────────────────────────────
 
-function VetFindScreen({ goto, tab, setTab }) {
+function VetFindScreen({ goto, tab, setTab, embedded = false }) {
   const [fNet, setFNet] = React.useState(true);
   const [fNew, setFNew] = React.useState(false);
   const [fRating, setFRating] = React.useState(false);
@@ -38,9 +38,11 @@ function VetFindScreen({ goto, tab, setTab }) {
     .filter(v => !fNew || v.accepting)
     .filter(v => !fRating || v.rating >= 4.5)
     .map(v => ({ ...v, tags: [v.network ? 'In-network' : 'Out-of-net', v.accepting ? 'New pts' : 'Waitlist'] }));
+  const Outer = embedded ? React.Fragment : 'div';
+  const outerProps = embedded ? {} : { style: { position: 'absolute', inset: 0, background: PM.cream, display: 'flex', flexDirection: 'column' } };
   return (
-    <div style={{ position: 'absolute', inset: 0, background: PM.cream, display: 'flex', flexDirection: 'column' }}>
-      <TopBar title="Find a vet" large subtitle="In-network clinics unlock your Lemonade discount"/>
+    <Outer {...outerProps}>
+      {!embedded && <TopBar title="Find a vet" large subtitle="In-network clinics unlock your Lemonade discount"/>}
       <div style={{ padding: '0 20px' }}>
         <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
           <Chip selected>📍 Portland · 10 mi</Chip>
@@ -60,11 +62,11 @@ function VetFindScreen({ goto, tab, setTab }) {
         <div style={{ fontFamily: FONT_BODY, fontSize: 13, color: PM.night, fontWeight: 600 }}>Closest ⌄</div>
       </div>
 
-      <div style={{ flex: 1, overflow: 'auto', padding: '0 20px 110px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{ flex: 1, overflow: 'auto', padding: embedded ? '0 20px 24px' : '0 20px 110px', display: 'flex', flexDirection: 'column', gap: 10 }}>
         {vets.map((v, i) => <VetRow key={i} {...v} onClick={() => goto('vetDetail', { vet: v })}/>)}
       </div>
-      <TabBar active={tab} onChange={setTab}/>
-    </div>
+      {!embedded && <TabBar active={tab} onChange={setTab}/>}
+    </Outer>
   );
 }
 
@@ -301,7 +303,7 @@ function VetDetailScreen({ goto, onBack, params }) {
 
 // ─── Insurance plans (Lemonade-inspired but ORIGINAL design) ───
 
-function InsuranceScreen({ goto, onBack }) {
+function InsuranceScreen({ goto, onBack, embedded = false }) {
   const [plan, setPlan] = React.useState(window.__pmPlan || 'plus');
   const plans = [
     { id: 'base', name: 'Base',     price: 44.27, tag: null, items: { 'Diagnostics': true, 'Procedures': true, 'Medication': true, 'Vet visit fees': false, 'Dental illness': false, 'Behavioral': false } },
@@ -309,12 +311,14 @@ function InsuranceScreen({ goto, onBack }) {
     { id: 'comp', name: 'Complete', price: 74.24, tag: null, items: { 'Everything in Plus': true, 'Physical therapy': true, 'End-of-life': true } },
   ];
   const choose = (id) => { setPlan(id); window.__pmPlan = id; };
+  const Outer = embedded ? React.Fragment : 'div';
+  const outerProps = embedded ? {} : { style: { position: 'absolute', inset: 0, background: PM.cream, display: 'flex', flexDirection: 'column' } };
   return (
-    <div style={{ position: 'absolute', inset: 0, background: PM.cream, display: 'flex', flexDirection: 'column' }}>
-      <TopBar title="Insurance" onBack={onBack} right={<div style={{
+    <Outer {...outerProps}>
+      {!embedded && <TopBar title="Insurance" onBack={onBack} right={<div style={{
         fontFamily: FONT_MONO, fontSize: 10, color: PM.coral, letterSpacing: 1, textTransform: 'uppercase',
-      }}>Lemonade</div>}/>
-      <div style={{ flex: 1, overflow: 'auto', padding: '4px 20px 24px' }}>
+      }}>Lemonade</div>}/>}
+      <div style={{ flex: 1, overflow: 'auto', padding: embedded ? '0 20px 24px' : '4px 20px 24px' }}>
         <h1 style={{
           margin: '8px 0 6px', fontFamily: FONT_DISPLAY, fontSize: 32, fontWeight: 400,
           color: PM.night, letterSpacing: -0.6, lineHeight: 1.05,
@@ -343,7 +347,7 @@ function InsuranceScreen({ goto, onBack }) {
           <PMButton variant="primary" onClick={() => { window.__pmPlan = plan; goto('checkout'); }}>Continue with {plans.find(x => x.id === plan).name} →</PMButton>
         </div>
       </div>
-    </div>
+    </Outer>
   );
 }
 
@@ -382,6 +386,407 @@ function PlanCard({ id, name, price, tag, items, selected, onClick }) {
         ))}
       </div>
     </button>
+  );
+}
+
+// ─── Pet care wrapper · 3 sub-tabs (Insurance / Find a vet / Claims) ─
+
+// Mock claims copied from the vet side, filtered to Sarah Chen's view.
+const ADOPTER_CLAIMS = [
+  {
+    id: 'LEM-2026-04-16-001', petName: 'Poppy',
+    provider: 'Lemonade Pet · Plus', amount: 265.00, copay: 25.00, payout: 240.00,
+    visit: 'Wed Apr 16, 2026 · Wellness · Forest Park Veterinary',
+    submittedAge: 'Just now', status: 'Pending',
+    timeline: [
+      { label: 'Submitted by Dr. Patel', when: 'Just now',          done: true  },
+      { label: 'Under review',           when: 'expected today',     done: false },
+      { label: 'Payout',                 when: '~3 business days',   done: false },
+    ],
+  },
+];
+
+// Extra fee owed by the adopter for the most-recent vet visit. From the SOAP
+// charges minus what the insurance plan covers — keeping it as window state
+// so "Pay now" can clear it from anywhere.
+function useExtraFee() {
+  const [paid, setPaid] = React.useState(!!window.__pmExtraFeePaid);
+  React.useEffect(() => {
+    const h = () => setPaid(!!window.__pmExtraFeePaid);
+    window.addEventListener('pm-extra-fee-changed', h);
+    return () => window.removeEventListener('pm-extra-fee-changed', h);
+  }, []);
+  const amount = 25.00;
+  const owed = paid ? 0 : amount;
+  const markPaid = () => {
+    window.__pmExtraFeePaid = true;
+    window.dispatchEvent(new CustomEvent('pm-extra-fee-changed'));
+  };
+  return { amount, owed, markPaid, paid };
+}
+
+function PetCareScreen({ goto, tab, setTab }) {
+  const [sub, setSub] = React.useState('findVet');   // 'insurance' | 'findVet' | 'claims'
+  const [notifOpen, setNotifOpen] = React.useState(false);
+  const fee = useExtraFee();
+
+  const subTabs = [
+    ['insurance', 'Insurance'],
+    ['findVet',   'Find a vet'],
+    ['claims',    'Claims'],
+  ];
+
+  return (
+    <div style={{ position: 'absolute', inset: 0, background: PM.cream, display: 'flex', flexDirection: 'column' }}>
+      {/* Header */}
+      <div style={{ paddingTop: 58, paddingLeft: 20, paddingRight: 20, paddingBottom: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+          <div>
+            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 30, fontWeight: 400, letterSpacing: -0.5, color: PM.night }}>
+              Pet care
+            </div>
+            <div style={{ fontFamily: FONT_BODY, fontSize: 12, color: PM.inkSoft, marginTop: 2 }}>
+              Insurance, vets & claims — all in one tab
+            </div>
+          </div>
+          {/* Notification bell */}
+          <button onClick={() => setNotifOpen(true)} style={{
+            position: 'relative',
+            width: 42, height: 42, borderRadius: 21, background: PM.white,
+            border: `1.5px solid ${PM.line}`, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <path d="M4 8 Q 4 3.5, 9 3.5 Q 14 3.5, 14 8 L 14 11 L 16 13 L 2 13 L 4 11 Z"
+                    stroke={PM.night} strokeWidth="1.6" fill="none" strokeLinejoin="round"/>
+              <path d="M7 15 Q 7 17, 9 17 Q 11 17, 11 15" stroke={PM.night} strokeWidth="1.6" fill="none" strokeLinecap="round"/>
+            </svg>
+            {fee.owed > 0 && (
+              <span style={{
+                position: 'absolute', top: 6, right: 6, width: 10, height: 10, borderRadius: 5,
+                background: PM.coral, border: `2px solid ${PM.white}`,
+              }}/>
+            )}
+          </button>
+        </div>
+
+        {/* Sub-tab segmented control */}
+        <div style={{ display: 'flex', gap: 6, padding: 4, background: PM.white, borderRadius: 16, border: `1px solid ${PM.line}` }}>
+          {subTabs.map(([k, l]) => (
+            <button key={k} onClick={() => setSub(k)} style={{
+              flex: 1, height: 34, borderRadius: 12, border: 'none', cursor: 'pointer',
+              background: sub === k ? PM.night : 'transparent',
+              color:      sub === k ? PM.cream : PM.inkSoft,
+              fontFamily: FONT_BODY, fontSize: 12, fontWeight: 600,
+            }}>{l}</button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ flex: 1, overflow: 'auto', paddingBottom: 110 }}>
+        {sub === 'insurance' && <InsuranceScreen embedded goto={goto}/>}
+        {sub === 'findVet'   && <VetFindScreen   embedded goto={goto}/>}
+        {sub === 'claims'    && <AdopterClaimsList claims={ADOPTER_CLAIMS}/>}
+      </div>
+
+      <TabBar active={tab} onChange={setTab}/>
+
+      {notifOpen && <ExtraFeeDrawer fee={fee} onClose={() => setNotifOpen(false)}/>}
+    </div>
+  );
+}
+
+function AdopterClaimsList({ claims }) {
+  const badgeStyle = (status) => ({
+    Draft:    { bg: '#FFF1D6', fg: '#9A6A00' },
+    Pending:  { bg: '#D6E8FF', fg: '#0034FF' },
+    Approved: { bg: '#E6F8EF', fg: '#1E8A5A' },
+    Denied:   { bg: '#FFE0E6', fg: '#B5103E' },
+  }[status] || { bg: '#FFF1D6', fg: '#9A6A00' });
+  if (!claims || claims.length === 0) {
+    return (
+      <EmptyState
+        title="No claims yet"
+        sub="Your vet will submit a claim to Lemonade after each in-network visit. They'll show up here."
+      />
+    );
+  }
+  return (
+    <div style={{ padding: '4px 20px 24px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: PM.inkSoft, letterSpacing: 0.8, textTransform: 'uppercase', margin: '4px 4px 2px' }}>
+        Submitted by your vets
+      </div>
+      {claims.map(c => {
+        const b = badgeStyle(c.status);
+        return (
+          <div key={c.id} style={{
+            padding: 14, borderRadius: 18, background: PM.white,
+            boxShadow: '0 1px 2px rgba(20,20,40,0.03), 0 6px 18px rgba(20,20,40,0.04)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+              <div style={{ fontFamily: FONT_BODY, fontSize: 14, fontWeight: 700, color: PM.night }}>
+                {c.petName} <span style={{ color: PM.inkFaint, fontWeight: 500 }}>· claim {c.id.split('-').slice(-1)[0]}</span>
+              </div>
+              <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: PM.inkFaint, letterSpacing: 0.4 }}>{c.submittedAge}</div>
+            </div>
+            <div style={{ marginTop: 4, fontFamily: FONT_BODY, fontSize: 12, color: PM.inkSoft }}>{c.visit}</div>
+            <div style={{ marginTop: 6, fontFamily: FONT_BODY, fontSize: 12, color: PM.inkSoft }}>{c.provider}</div>
+            <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <span style={{
+                padding: '3px 8px', borderRadius: 8,
+                background: b.bg, color: b.fg,
+                fontFamily: FONT_MONO, fontSize: 10, letterSpacing: 0.4, textTransform: 'uppercase', fontWeight: 700,
+              }}>{c.status}</span>
+              <span style={{ fontFamily: FONT_MONO, fontSize: 11, color: PM.ink, fontWeight: 700, marginLeft: 'auto' }}>
+                Billed ${c.amount.toFixed(2)} · Lemonade pays ${c.payout.toFixed(2)}
+              </span>
+            </div>
+            {c.timeline && (
+              <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${PM.lineSoft}` }}>
+                {c.timeline.map((s, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px 0' }}>
+                    <span style={{
+                      width: 16, height: 16, borderRadius: 8,
+                      background: s.done ? PM.mint : 'transparent',
+                      border: s.done ? 'none' : `1.5px solid ${PM.line}`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                    }}>
+                      {s.done && <svg width="8" height="8" viewBox="0 0 9 9"><path d="M1 5 L 3.5 7 L 8 1.5" stroke="#FFF" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                    </span>
+                    <span style={{ flex: 1, fontFamily: FONT_BODY, fontSize: 12, color: s.done ? PM.ink : PM.inkSoft }}>{s.label}</span>
+                    <span style={{ fontFamily: FONT_MONO, fontSize: 10, color: PM.inkFaint, letterSpacing: 0.3 }}>{s.when}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function ExtraFeeDrawer({ fee, onClose }) {
+  const [confirming, setConfirming] = React.useState(false);
+  const pay = () => {
+    setConfirming(true);
+    setTimeout(() => { fee.markPaid(); setTimeout(onClose, 700); }, 700);
+  };
+  if (fee.owed === 0 && !confirming) {
+    return (
+      <div style={{
+        position: 'absolute', inset: 0, zIndex: 100, background: 'rgba(20,20,40,0.45)',
+        display: 'flex', alignItems: 'flex-end',
+      }}>
+        <div style={{ width: '100%', background: PM.cream, borderRadius: '28px 28px 0 0', padding: '32px 22px 32px' }}>
+          <div style={{ fontFamily: FONT_DISPLAY, fontSize: 28, color: PM.night, letterSpacing: -0.4, marginBottom: 6 }}>
+            All caught up.
+          </div>
+          <div style={{ fontFamily: FONT_BODY, fontSize: 13, color: PM.inkSoft, marginBottom: 18 }}>
+            No outstanding fees from your recent vet visits.
+          </div>
+          <button onClick={onClose} style={{
+            width: '100%', height: 50, borderRadius: 25, background: PM.night, color: '#FFF',
+            border: 'none', cursor: 'pointer', fontFamily: FONT_BODY, fontSize: 14, fontWeight: 600,
+          }}>Close</button>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div style={{
+      position: 'absolute', inset: 0, zIndex: 100, background: 'rgba(20,20,40,0.45)',
+      display: 'flex', alignItems: 'flex-end',
+      animation: 'fadeIn 0.2s ease',
+    }}>
+      <style>{`
+        @keyframes pm-pay-pop { 0% { transform: scale(0); } 60% { transform: scale(1.15); } 100% { transform: scale(1); } }
+      `}</style>
+      <div style={{
+        width: '100%', background: PM.cream, borderRadius: '28px 28px 0 0',
+        padding: '22px 22px 32px', position: 'relative',
+        animation: 'slideUp 0.32s cubic-bezier(0.4, 0, 0.2, 1)',
+      }}>
+        <div style={{
+          position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)',
+          width: 40, height: 4, borderRadius: 2, background: PM.line,
+        }}/>
+        <button onClick={onClose} style={{
+          position: 'absolute', top: 16, right: 16, width: 32, height: 32, borderRadius: 16,
+          background: 'transparent', border: 'none', cursor: 'pointer', color: PM.inkSoft,
+        }}>
+          <svg width="14" height="14" viewBox="0 0 11 11"><path d="M2 2 L 9 9 M 9 2 L 2 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+        </button>
+
+        <div style={{ marginTop: 14, fontFamily: FONT_MONO, fontSize: 10, color: PM.coral, letterSpacing: 1.4, textTransform: 'uppercase', fontWeight: 700 }}>
+          Heads up — extra fee due
+        </div>
+        <h2 style={{
+          margin: '6px 0 4px', fontFamily: FONT_DISPLAY, fontSize: 30, fontWeight: 400,
+          color: PM.night, letterSpacing: -0.6, lineHeight: 1.05,
+        }}>
+          You owe <em style={{ color: PM.coral }}>${fee.amount.toFixed(2)}</em>
+        </h2>
+        <div style={{ fontFamily: FONT_BODY, fontSize: 13, color: PM.inkSoft, marginBottom: 16 }}>
+          From Poppy's wellness visit at Forest Park Veterinary, Wed Apr 16.
+        </div>
+
+        <div style={{ background: PM.white, borderRadius: 16, padding: 14, marginBottom: 14, boxShadow: '0 1px 3px rgba(20,20,40,0.04)' }}>
+          {[
+            ['Subtotal billed',              '$265.00'],
+            ['Lemonade Plus coverage',       '−$240.00'],
+          ].map(([l, v]) => (
+            <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: `1px solid ${PM.lineSoft}` }}>
+              <span style={{ fontFamily: FONT_BODY, fontSize: 13, color: PM.ink }}>{l}</span>
+              <span style={{ fontFamily: FONT_MONO, fontSize: 13, color: PM.ink }}>{v}</span>
+            </div>
+          ))}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingTop: 10 }}>
+            <span style={{ fontFamily: FONT_DISPLAY, fontSize: 18, color: PM.night }}>You owe</span>
+            <span style={{ fontFamily: FONT_DISPLAY, fontSize: 22, color: PM.coral, fontStyle: 'italic' }}>${fee.amount.toFixed(2)}</span>
+          </div>
+        </div>
+
+        <button onClick={pay} disabled={confirming} style={{
+          width: '100%', height: 54, borderRadius: 27, border: 'none', cursor: confirming ? 'default' : 'pointer',
+          background: confirming ? PM.mint : PM.coral, color: '#FFF',
+          fontFamily: FONT_BODY, fontSize: 16, fontWeight: 600,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          boxShadow: confirming ? 'none' : '0 6px 18px rgba(255,0,131,0.4)',
+          transition: 'background 0.25s',
+        }}>
+          {confirming ? (
+            <span style={{
+              width: 30, height: 30, borderRadius: 15, background: '#FFF', color: PM.mint,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              animation: 'pm-pay-pop 0.36s cubic-bezier(0.34, 1.56, 0.64, 1) both',
+            }}>
+              <svg width="16" height="16" viewBox="0 0 18 18"><path d="M3 9 L 7.5 13 L 15 5" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" fill="none"/></svg>
+            </span>
+          ) : `Pay $${fee.amount.toFixed(2)}`}
+        </button>
+        <button onClick={onClose} style={{
+          width: '100%', marginTop: 10, height: 36, background: 'transparent', color: PM.inkSoft,
+          border: 'none', fontFamily: FONT_BODY, fontSize: 13, cursor: 'pointer',
+        }}>Not now</button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Insurance Welcome · post-checkout celebration ─────────
+
+function InsuranceWelcomeScreen({ onContinue }) {
+  return (
+    <div style={{ position: 'absolute', inset: 0, background: PM.cream, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <style>{`
+        @keyframes pm-welcome-confetti {
+          0%   { transform: translateY(-20px) rotate(0deg);   opacity: 0; }
+          15%  { opacity: 1; }
+          100% { transform: translateY(640px) rotate(540deg); opacity: 0; }
+        }
+        @keyframes pm-welcome-ribbon {
+          0%, 100% { transform: rotate(-6deg); }
+          50%      { transform: rotate(6deg); }
+        }
+        @keyframes pm-welcome-pop {
+          0%   { transform: scale(0.6); opacity: 0; }
+          60%  { transform: scale(1.06); opacity: 1; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        .pm-wel-confetti { position: absolute; top: 0; font-size: 14px;
+          animation: pm-welcome-confetti 3.2s ease-in infinite; }
+      `}</style>
+
+      {/* Confetti overlay covering the whole screen */}
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+        {[
+          { l: '8%',  d: '0s',   c: '#FF0083' },
+          { l: '22%', d: '0.5s', c: '#FFD400' },
+          { l: '34%', d: '1.1s', c: '#0034FF' },
+          { l: '46%', d: '0.3s', c: '#00C46A' },
+          { l: '58%', d: '0.9s', c: '#FF0083' },
+          { l: '70%', d: '0.2s', c: '#FFD400' },
+          { l: '82%', d: '1.4s', c: '#0034FF' },
+          { l: '92%', d: '0.7s', c: '#00C46A' },
+        ].map((p, i) => (
+          <span key={i} className="pm-wel-confetti"
+            style={{ left: p.l, color: p.c, animationDelay: p.d }}>
+            {i % 3 === 0 ? '✦' : i % 3 === 1 ? '♥' : '◆'}
+          </span>
+        ))}
+      </div>
+
+      <div style={{ flex: 1, padding: '60px 24px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', position: 'relative' }}>
+        {/* Hero illustration — same splash image, smaller */}
+        <div style={{
+          width: 200, height: 200, borderRadius: 100, overflow: 'hidden',
+          background: '#FFF', boxShadow: '0 12px 36px rgba(255,0,131,0.22)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          animation: 'pm-welcome-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both',
+          marginBottom: 8,
+        }}>
+          <img src={window.__PAWMATCH_SPLASH_HERO__ || 'assets/splash-hero.jpg'}
+            alt="" style={{ width: '105%', height: '105%', objectFit: 'cover', objectPosition: 'center 18%' }}/>
+        </div>
+
+        {/* Ribbon banner */}
+        <div style={{
+          position: 'relative', marginTop: -14, marginBottom: 14,
+          padding: '8px 22px',
+          background: PM.coral, color: '#FFF',
+          borderRadius: 6,
+          fontFamily: FONT_MONO, fontSize: 11, fontWeight: 700, letterSpacing: 1.4, textTransform: 'uppercase',
+          boxShadow: '0 6px 18px rgba(255,0,131,0.35)',
+          animation: 'pm-welcome-ribbon 3.6s ease-in-out infinite',
+          transformOrigin: 'center',
+        }}>
+          <span style={{ position: 'absolute', left: -8, top: '50%', transform: 'translateY(-50%) rotate(45deg)', width: 12, height: 12, background: PM.coral }}/>
+          <span style={{ position: 'absolute', right: -8, top: '50%', transform: 'translateY(-50%) rotate(45deg)', width: 12, height: 12, background: PM.coral }}/>
+          Welcome aboard
+        </div>
+
+        <h1 style={{
+          margin: '6px 0 10px', fontFamily: FONT_DISPLAY, fontSize: 36, fontWeight: 400,
+          color: PM.night, letterSpacing: -0.8, lineHeight: 1.02,
+          animation: 'pm-welcome-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s both',
+        }}>
+          Welcome to the<br/>
+          <em style={{ color: PM.coral }}>Lemonade family</em>.
+        </h1>
+        <div style={{
+          fontFamily: FONT_BODY, fontSize: 14, color: PM.inkSoft, lineHeight: 1.5,
+          maxWidth: 300, marginBottom: 22,
+        }}>
+          Poppy is now covered by Lemonade Plus. Your policy details and welcome packet are on the way to <strong style={{ color: PM.night }}>sarah@example.com</strong>.
+        </div>
+
+        <div style={{
+          width: '100%', padding: 16, borderRadius: 20, background: PM.white,
+          boxShadow: '0 4px 14px rgba(20,20,40,0.06)', marginBottom: 18,
+          animation: 'pm-welcome-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s both',
+        }}>
+          <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: PM.violet, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 8 }}>
+            Your plan at a glance
+          </div>
+          {[
+            ['Policy holder', 'Sarah Chen'],
+            ['Pet covered',   'Poppy · Golden Retriever Mix'],
+            ['Plan',          'Lemonade Plus · $67.74/mo'],
+            ['Annual savings','≈ $420 vs. self-pay'],
+          ].map(([k, v]) => (
+            <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0' }}>
+              <span style={{ fontFamily: FONT_BODY, fontSize: 12, color: PM.inkSoft }}>{k}</span>
+              <span style={{ fontFamily: FONT_BODY, fontSize: 13, color: PM.ink, fontWeight: 600 }}>{v}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ padding: '12px 20px 32px', borderTop: `1px solid ${PM.lineSoft}`, background: PM.cream }}>
+        <PMButton variant="coral" onClick={onContinue}>Continue →</PMButton>
+      </div>
+    </div>
   );
 }
 
@@ -464,7 +869,7 @@ function CheckoutScreen({ onBack, goto }) {
           </div>
         </div>
 
-        <PMButton variant="primary" onClick={() => goto('swipe')}>Confirm · ${copay}</PMButton>
+        <PMButton variant="primary" onClick={() => goto('insuranceWelcome')}>Confirm · ${copay}</PMButton>
       </div>
     </div>
   );
@@ -829,4 +1234,9 @@ function ProfileRow({ label, value }) {
   );
 }
 
-Object.assign(window, { VetFindScreen, VetDetailScreen, InsuranceScreen, CheckoutScreen, UploadFormScreen, FormVerifiedScreen, ProfileScreen, StubScreen });
+Object.assign(window, {
+  VetFindScreen, VetDetailScreen, InsuranceScreen, CheckoutScreen,
+  UploadFormScreen, FormVerifiedScreen, ProfileScreen, StubScreen,
+  PetCareScreen, AdopterClaimsList, ExtraFeeDrawer, InsuranceWelcomeScreen,
+  ADOPTER_CLAIMS,
+});

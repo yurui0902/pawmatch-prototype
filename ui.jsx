@@ -150,7 +150,7 @@ function TabBar({ active, onChange }) {
     { id: 'pets',    label: 'Discover', icon: 'paw' },
     { id: 'matches', label: 'Matches',  icon: 'spark' },
     { id: 'chat',    label: 'Chat',     icon: 'chat' },
-    { id: 'vet',     label: 'Vet',      icon: 'cross' },
+    { id: 'petCare', label: 'Pet care', icon: 'cross' },
     { id: 'me',      label: 'Me',       icon: 'me' },
   ];
   const Icon = ({ name, on }) => {

@@ -98,16 +98,21 @@ const HOT_PINK = '#FF0083';
 const SOFT_PINK = '#FFF1F7';
 
 function SwipeScreen({ goto, tab, setTab, petTypes }) {
-  const types = (petTypes && petTypes.length) ? petTypes : ['dogs', 'cats', 'small'];
+  const rawTypes = (petTypes && petTypes.length) ? petTypes : ['both'];
+  // 'both' expands to dogs + cats so the rest of the filter logic stays simple
+  const types = rawTypes.includes('both')
+    ? Array.from(new Set([...rawTypes.filter(t => t !== 'both'), 'dogs', 'cats']))
+    : rawTypes;
   const wantsAny = types.includes('any');
   const allowedKinds = wantsAny ? null : new Set(types.map(t => PET_TYPE_TO_KIND[t]).filter(Boolean));
 
-  // Initialize filter chip from first matching pet type
+  // Initialize filter chip from onboarding selection
   const initialFilter = (() => {
     if (wantsAny) return 'any';
+    if (types.includes('dogs') && types.includes('cats')) return 'any';
     if (types.includes('dogs')) return 'dogs';
     if (types.includes('cats')) return 'cats';
-    if (types.includes('small') || types.includes('rabbits')) return 'rabbits';
+    if (types.includes('rabbits')) return 'rabbits';
     return 'dogs';
   })();
 

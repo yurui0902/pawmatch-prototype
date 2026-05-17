@@ -7,15 +7,33 @@ function ShelterHomeScreen({ goto, tab, setTab }) {
     if (h < 18) return 'Good afternoon';
     return 'Good evening';
   };
-  const topPets = [...SHELTER_PETS].sort((a, b) => b.likes - a.likes).slice(0, 3);
+  const topPets = [...SHELTER_PETS].sort((a, b) => b.swipes - a.swipes).slice(0, 3);
   const pending = APPLICATIONS.filter(a => a.stage === 'pre-app').length;
+  const unreadChats = (SHELTER_CHATS || []).filter(c => c.unread > 0).length;
+
+  // count-up animation for the headline adoption number
+  const [count, setCount] = React.useState(0);
+  React.useEffect(() => {
+    const target = SHELTER_STATS.adoptedThisMonth;
+    let raf;
+    const start = performance.now();
+    const tick = (now) => {
+      const t = Math.min(1, (now - start) / 900);
+      // ease-out cubic
+      const eased = 1 - Math.pow(1 - t, 3);
+      setCount(Math.round(target * eased));
+      if (t < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []);
 
   return (
     <div style={{ position: 'absolute', inset: 0, background: PM.cream, display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
       <div style={{ paddingTop: 58, paddingLeft: 20, paddingRight: 20, paddingBottom: 8 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: PM.coral, letterSpacing: 1.4, textTransform: 'uppercase', fontWeight: 600 }}>
               {SHELTER.name}
             </div>
@@ -25,6 +43,12 @@ function ShelterHomeScreen({ goto, tab, setTab }) {
             }}>
               {greet()},<br/>
               <em style={{ color: PM.coral }}>{SHELTER.operator.split(' ')[0]}</em>.
+            </div>
+            <div style={{ fontFamily: FONT_BODY, fontSize: 12, color: PM.inkSoft, marginTop: 8, lineHeight: 1.45 }}>
+              Manage applications, pet listings, and conversations from this dashboard.
+            </div>
+            <div style={{ marginTop: 6, fontFamily: FONT_MONO, fontSize: 10, color: PM.inkFaint, letterSpacing: 0.6, textTransform: 'uppercase' }}>
+              {APPLICATIONS.length} active applications · {unreadChats} unread chat{unreadChats === 1 ? '' : 's'} · {SHELTER_PETS.length} listings
             </div>
           </div>
           <button style={{
@@ -49,24 +73,53 @@ function ShelterHomeScreen({ goto, tab, setTab }) {
       </div>
 
       <div style={{ flex: 1, overflow: 'auto', padding: '12px 20px 110px' }}>
-        {/* Big-ticket stat hero */}
+        {/* Big-ticket stat hero — pink, count-up, hero-sized number */}
         <div style={{
-          padding: 20, borderRadius: 24, background: PM.night, color: PM.cream, marginBottom: 12,
+          padding: '22px 22px 24px', borderRadius: 28,
+          background: `linear-gradient(160deg, ${PM.coral} 0%, #E8388F 100%)`,
+          color: '#FFF', marginBottom: 14,
           position: 'relative', overflow: 'hidden',
+          boxShadow: '0 12px 36px rgba(255,0,131,0.32)',
         }}>
-          <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: PM.coralSoft, letterSpacing: 1.5, textTransform: 'uppercase' }}>
-            This month
+          <style>{`
+            @keyframes pm-spark-orbit {
+              0%, 100% { transform: translate(0, 0) rotate(0deg); opacity: 0.4; }
+              50%      { transform: translate(-4px, -4px) rotate(180deg); opacity: 1; }
+            }
+          `}</style>
+          {/* sparkle accents */}
+          <span style={{
+            position: 'absolute', top: 18, right: 100,
+            fontSize: 14, color: '#FFFFFF', opacity: 0.75,
+            animation: 'pm-spark-orbit 3.6s ease-in-out infinite',
+          }}>✦</span>
+          <span style={{
+            position: 'absolute', top: 64, right: 160,
+            fontSize: 10, color: '#FFFFFF', opacity: 0.55,
+            animation: 'pm-spark-orbit 3.6s ease-in-out 1.2s infinite',
+          }}>✦</span>
+          {/* +18% green pill, top-right */}
+          <div style={{
+            position: 'absolute', top: 18, right: 18,
+            padding: '5px 11px', borderRadius: 14,
+            background: '#FFFFFF', color: PM.mint,
+            fontFamily: FONT_MONO, fontSize: 11, fontWeight: 700, letterSpacing: 0.4,
+            boxShadow: '0 4px 10px rgba(20,20,40,0.18)',
+            display: 'flex', alignItems: 'center', gap: 4,
+          }}>
+            <span style={{ fontFamily: FONT_DISPLAY, fontSize: 13 }}>↑</span>
+            +{Math.round(SHELTER_STATS.adoptedDelta * 100)}%
           </div>
-          <div style={{ marginTop: 6, display: 'flex', alignItems: 'baseline', gap: 12 }}>
-            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 64, letterSpacing: -2, lineHeight: 0.95 }}>
-              {SHELTER_STATS.adoptedThisMonth}
-            </div>
-            <div>
-              <div style={{ fontFamily: FONT_BODY, fontSize: 13, opacity: 0.7 }}>adoptions completed</div>
-              <div style={{ marginTop: 4, fontFamily: FONT_MONO, fontSize: 11, color: PM.mint, fontWeight: 600 }}>
-                ↑ +{Math.round(SHELTER_STATS.adoptedDelta * 100)}% vs last month
-              </div>
-            </div>
+
+          <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: 'rgba(255,255,255,0.85)', letterSpacing: 1.5, textTransform: 'uppercase', fontWeight: 700 }}>
+            Adoptions this month
+          </div>
+          <div style={{
+            fontFamily: FONT_DISPLAY, fontSize: 88, letterSpacing: -3.2, lineHeight: 0.95,
+            marginTop: 8, fontVariantNumeric: 'tabular-nums',
+          }}>{count}</div>
+          <div style={{ marginTop: 6, fontFamily: FONT_BODY, fontSize: 13, opacity: 0.95, fontWeight: 500 }}>
+            pets placed in forever homes · vs last month
           </div>
         </div>
 
@@ -100,7 +153,7 @@ function ShelterHomeScreen({ goto, tab, setTab }) {
         {/* Top performing pets */}
         <div style={{ marginBottom: 18 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
-            <div style={{ fontFamily: FONT_BODY, fontSize: 13, color: PM.night, fontWeight: 700 }}>Top performing pets</div>
+            <div style={{ fontFamily: FONT_BODY, fontSize: 13, color: PM.night, fontWeight: 700 }}>Most viewed</div>
             <button onClick={() => setTab('pets')} style={{
               background: 'none', border: 'none', cursor: 'pointer',
               fontFamily: FONT_BODY, fontSize: 12, color: PM.coral, fontWeight: 600,

@@ -82,7 +82,7 @@ const APPLICATIONS = [
   },
   {
     id: 'a2', applicant: 'Jordan Pham', initials: 'JP', petKey: 'max',
-    household: 'Couple', location: 'NE Portland · 3.2 mi', age: '5h', stage: 'meeting',
+    household: 'Couple', location: 'NE Portland · 3.2 mi', age: '5h', stage: 'scheduled',
     preApp: {
       whyAdopt: 'We have the time and space and Max looks like a champ.',
       favorite: 'A trained lab is a dream — we want to keep his manners class going.',
@@ -99,7 +99,7 @@ const APPLICATIONS = [
   },
   {
     id: 'a3', applicant: 'Priya Raman', initials: 'PR', petKey: 'sage',
-    household: 'Single', location: 'SE Portland · 4.5 mi', age: '1d', stage: 'met',
+    household: 'Single', location: 'SE Portland · 4.5 mi', age: '1d', stage: 'meeting',
     preApp: {
       whyAdopt: 'A calm senior is exactly what my apartment needs.',
       favorite: 'I love that she just wants company — same.',
@@ -143,10 +143,10 @@ const SHELTER_STATS = {
 };
 
 const APP_STAGES = [
-  { key: 'pre-app',  label: 'Pre-app',  color: '#FFD400' },
-  { key: 'meeting',  label: 'Meeting',  color: '#FF0083' },
-  { key: 'met',      label: 'Met',      color: '#0034FF' },
-  { key: 'approved', label: 'Approved', color: '#00C46A' },
+  { key: 'pre-app',   label: 'Pre-app',   color: '#FFD400' },
+  { key: 'scheduled', label: 'Scheduled', color: '#FF0083' },   // was Meeting
+  { key: 'meeting',   label: 'Meeting',   color: '#0034FF' },   // was Met
+  { key: 'approved',  label: 'Approved',  color: '#00C46A' },
 ];
 
 Object.assign(window, { SHELTER, SHELTER_PETS, APPLICATIONS, SHELTER_CHATS, SHELTER_STATS, APP_STAGES });

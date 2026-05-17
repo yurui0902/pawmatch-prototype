@@ -230,7 +230,7 @@ function SSOButton({ kind }) {
 // ─── Onboarding ────────────────────────────────────────────
 
 function OnboardingScreen({ onContinue, onSkip }) {
-  const [petTypes, setPetTypes] = React.useState(['dogs']);
+  const [petTypes, setPetTypes] = React.useState(['both']);
   const [household, setHousehold] = React.useState('family');
   const [experience, setExperience] = React.useState('current');
   const [step, setStep] = React.useState(2);
@@ -272,10 +272,19 @@ function OnboardingScreen({ onContinue, onSkip }) {
       <div style={{ flex: 1, overflow: 'auto', padding: '24px 20px 24px' }}>
         <OBSection label="Pet type" hint="Pick one or more">
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <OBCardChoice icon={<Pet_Poppy size={70}/>} label="Dogs"      selected={petTypes.includes('dogs')}   onClick={() => toggle(petTypes, setPetTypes, 'dogs')} accent={PM.coral}/>
-            <OBCardChoice icon={<Pet_Miso  size={70}/>} label="Cats"      selected={petTypes.includes('cats')}   onClick={() => toggle(petTypes, setPetTypes, 'cats')} accent={PM.gold}/>
-            <OBCardChoice icon={<Pet_Clover size={66}/>} label="Small pets" selected={petTypes.includes('small')} onClick={() => toggle(petTypes, setPetTypes, 'small')} accent={PM.violet}/>
-            <OBCardChoice icon={<div style={{ fontFamily: FONT_DISPLAY, fontSize: 50, color: PM.ink, fontStyle: 'italic' }}>any</div>} label="Surprise me" selected={petTypes.includes('any')} onClick={() => toggle(petTypes, setPetTypes, 'any')} accent={PM.mint}/>
+            <OBCardChoice icon={<Pet_Poppy size={70}/>} label="Dogs"
+              selected={petTypes.includes('dogs')}
+              onClick={() => toggle(petTypes, setPetTypes, 'dogs')} accent={PM.coral}/>
+            <OBCardChoice icon={<Pet_Miso  size={70}/>} label="Cats"
+              selected={petTypes.includes('cats')}
+              onClick={() => toggle(petTypes, setPetTypes, 'cats')} accent={PM.gold}/>
+            <OBCardChoice
+              icon={<div style={{ fontFamily: FONT_DISPLAY, fontSize: 30, color: PM.ink, lineHeight: 1, fontStyle: 'italic' }}>cats<br/>+ dogs</div>}
+              label="Both cats and dogs"
+              selected={petTypes.includes('both')}
+              onClick={() => toggle(petTypes, setPetTypes, 'both')} accent={PM.violet}
+              wide
+            />
           </div>
         </OBSection>
 
@@ -297,7 +306,7 @@ function OnboardingScreen({ onContinue, onSkip }) {
       </div>
 
       <div style={{ padding: '12px 20px 32px', background: PM.cream, borderTop: `1px solid ${PM.lineSoft}` }}>
-        <PMButton onClick={() => onContinue(petTypes.length ? petTypes : ['dogs','cats','small'])} variant="primary">Continue →</PMButton>
+        <PMButton onClick={() => onContinue(petTypes.length ? petTypes : ['both'])} variant="primary">Continue →</PMButton>
       </div>
     </div>
   );
@@ -315,9 +324,10 @@ function OBSection({ label, hint, children }) {
   );
 }
 
-function OBCardChoice({ icon, label, selected, onClick, accent }) {
+function OBCardChoice({ icon, label, selected, onClick, accent, wide }) {
   return (
     <button onClick={onClick} style={{
+      gridColumn: wide ? '1 / -1' : 'auto',
       height: 130, borderRadius: 22,
       background: selected ? PM.night : PM.white,
       color: selected ? PM.cream : PM.night,

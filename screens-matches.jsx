@@ -26,7 +26,11 @@ function MatchesScreen({ goto, tab, setTab, matches: matchesProp }) {
 
   return (
     <div style={{ position: 'absolute', inset: 0, background: PM.cream, display: 'flex', flexDirection: 'column' }}>
-      <TopBar title="Matches" large subtitle={`Your starred pets — ${counts.all} total`}/>
+      <TopBar
+        title="Matches" large
+        subtitle={`Your starred pets — ${counts.all} total`}
+        right={typeof ShelterDemoToggle === 'function' ? <ShelterDemoToggle/> : null}
+      />
       <div style={{ padding: '0 20px 8px' }}>
         <div style={{ display: 'flex', gap: 6, padding: 4, background: PM.white, borderRadius: 16, border: `1px solid ${PM.line}` }}>
           {segments.map(([k,l]) => (

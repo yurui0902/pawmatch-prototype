@@ -5,7 +5,7 @@ function App() {
   const [stack, setStack] = React.useState([{ name: 'splash', params: {} }]);
   const [tab, setTab] = React.useState('pets');
   // onboarding answers, lifted up so the swipe feed can use them
-  const [petTypes, setPetTypes] = React.useState(['dogs', 'cats', 'small']);
+  const [petTypes, setPetTypes] = React.useState(['both']);
   // user's matches — lifted so Profile can show a live count
   const [matches, setMatches] = React.useState([
     { petKey: 'poppy',  met: 5, total: 6, status: 'incomplete', age: '2h' },
@@ -33,7 +33,7 @@ function App() {
       pets: 'swipe',
       matches: 'matches',
       chat: 'chat',
-      vet: 'vetFind',
+      petCare: 'petCare',
       me: 'profile',
     }[id];
     setStack([{ name: home, params: {} }]);
@@ -46,8 +46,8 @@ function App() {
     case 'register':     screen = <RegisterScreen onBack={back} onContinue={(go) => replace(go === 'onboarding' ? 'onboarding' : go)}/>; break;
     case 'login':        screen = <LoginScreen onBack={back} onContinue={(go) => { setTab('pets'); replace(go); }}/>; break;
     case 'onboarding':   screen = <OnboardingScreen
-                                    onContinue={(types) => { setPetTypes(types && types.length ? types : ['dogs','cats','small']); setTab('pets'); replace('swipe'); }}
-                                    onSkip={() => { setPetTypes(['dogs','cats','small']); setTab('pets'); replace('swipe'); }}
+                                    onContinue={(types) => { setPetTypes(types && types.length ? types : ['both']); setTab('pets'); replace('swipe'); }}
+                                    onSkip={() => { setPetTypes(['both']); setTab('pets'); replace('swipe'); }}
                                   />; break;
 
     case 'swipe':        screen = <SwipeScreen goto={(n, p) => goto(n, p)} tab={tab} setTab={onTabChange} petTypes={petTypes}/>; break;
@@ -55,10 +55,11 @@ function App() {
     case 'chat':         screen = <ChatScreen goto={(n, p) => goto(n, p)} tab={tab} setTab={onTabChange}/>; break;
     case 'chatThread':   screen = <ChatThreadScreen goto={(n, p) => p ? goto(n, p) : back()} params={current.params}/>; break;
 
-    case 'vetFind':      screen = <VetFindScreen goto={(n, p) => goto(n, p)} tab={tab} setTab={onTabChange}/>; break;
+    case 'petCare':      screen = <PetCareScreen goto={(n, p) => goto(n, p)} tab={tab} setTab={onTabChange}/>; break;
     case 'vetDetail':    screen = <VetDetailScreen goto={(n, p) => goto(n, p)} onBack={back} params={current.params}/>; break;
     case 'insurance':    screen = <InsuranceScreen goto={(n, p) => goto(n, p)} onBack={back}/>; break;
     case 'checkout':     screen = <CheckoutScreen onBack={back} goto={(n, p) => goto(n, p)}/>; break;
+    case 'insuranceWelcome': screen = <InsuranceWelcomeScreen onContinue={() => { setTab('petCare'); setStack([{ name: 'petCare', params: {} }]); }}/>; break;
     case 'uploadForm':   screen = <UploadFormScreen goto={(n, p) => goto(n, p)} onBack={back}/>; break;
     case 'formVerified': screen = <FormVerifiedScreen goto={(n, p) => goto(n, p)} onBack={back}/>; break;
 

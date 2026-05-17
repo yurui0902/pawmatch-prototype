@@ -4,8 +4,8 @@ function stageMeta(key) {
   return APP_STAGES.find(s => s.key === key) || APP_STAGES[0];
 }
 
-function ShelterFormsScreen({ goto, tab, setTab }) {
-  const [seg, setSeg] = React.useState('all');
+function ShelterFormsScreen({ goto, tab, setTab, initialSeg, hideTabBar }) {
+  const [seg, setSeg] = React.useState(initialSeg || 'all');
   const segments = [['all', `All ${APPLICATIONS.length}`], ...APP_STAGES.map(s => {
     const n = APPLICATIONS.filter(a => a.stage === s.key).length;
     return [s.key, `${s.label} · ${n}`];
@@ -45,7 +45,7 @@ function ShelterFormsScreen({ goto, tab, setTab }) {
         )}
       </div>
 
-      <ShelterTabBar active={tab} onChange={setTab}/>
+      {!hideTabBar && <ShelterTabBar active={tab} onChange={setTab}/>}
     </div>
   );
 }
@@ -163,10 +163,10 @@ function ShelterAppReviewScreen({ app, onBack, goto, setTab }) {
       </div>
 
       <div style={{ flex: 1, overflow: 'auto', padding: '12px 20px 120px' }}>
-        {sm.key === 'pre-app' && <PreAppPanel app={app}/>}
-        {sm.key === 'meeting' && <MeetingPanel app={app}/>}
-        {sm.key === 'met'     && <MetPanel app={app}/>}
-        {sm.key === 'approved' && <ApprovedPanel app={app}/>}
+        {sm.key === 'pre-app'   && <PreAppPanel app={app}/>}
+        {sm.key === 'scheduled' && <ScheduledPanel app={app}/>}
+        {sm.key === 'meeting'   && <MeetingPanel  app={app}/>}
+        {sm.key === 'approved'  && <ApprovedPanel app={app}/>}
 
         {decision && (
           <div style={{
@@ -270,7 +270,7 @@ function PreAppPanel({ app }) {
   );
 }
 
-function MeetingPanel({ app }) {
+function ScheduledPanel({ app }) {
   return (
     <>
       <ReviewSection title="Schedule a meet & greet" hint="In-person">
@@ -292,7 +292,7 @@ function MeetingPanel({ app }) {
   );
 }
 
-function MetPanel({ app }) {
+function MeetingPanel({ app }) {
   const f = app.fullForm || {};
   return (
     <>

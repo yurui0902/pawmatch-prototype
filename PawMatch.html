@@ -83,14 +83,23 @@
   <script type="text/babel" src="screens-stubs.jsx"></script>
   <script type="text/babel" src="app.jsx"></script>
 
+  <!-- Shelter cross-end demo dependencies -->
+  <script type="text/babel" src="shelter-data.jsx"></script>
+  <script type="text/babel" src="app-shelter.jsx"></script>
+  <script type="text/babel" src="screens-shelter-forms.jsx"></script>
+  <script type="text/babel" src="shelter-demo.jsx"></script>
+
   <script type="text/babel">
-    // Stage scaling — fit device to viewport while keeping native pixels
+    // Stage scaling — fit one or two device frames into the viewport while
+    // keeping native pixels. When the shelter demo is toggled on, render a
+    // second iOS frame to the right showing the shelter Forms view.
     function Stage() {
-      const ref = React.useRef(null);
+      const showShelter = (typeof useShelterDemo === 'function') ? useShelterDemo() : false;
       const [scale, setScale] = React.useState(1);
       React.useEffect(() => {
         const onResize = () => {
-          const W = 402, H = 874;
+          const phoneW = 402, H = 874, gap = 28;
+          const W = showShelter ? phoneW * 2 + gap : phoneW;
           const vw = window.innerWidth - 40;
           const vh = window.innerHeight - 40;
           setScale(Math.min(vw / W, vh / H, 1.05));
@@ -98,14 +107,46 @@
         onResize();
         window.addEventListener('resize', onResize);
         return () => window.removeEventListener('resize', onResize);
-      }, []);
+      }, [showShelter]);
+
       return (
-        <div ref={ref} className="stage" style={{ transform: `scale(${scale})` }}>
+        <div className="stage" style={{
+          transform: `scale(${scale})`,
+          display: 'flex', alignItems: 'center', gap: 28,
+        }}>
           <IOSDevice width={402} height={874}>
             <div style={{ position: 'absolute', inset: 0 }}>
               <App/>
             </div>
           </IOSDevice>
+          {showShelter && (
+            <div style={{
+              position: 'relative',
+              animation: 'pm-shelter-slide-in 0.45s cubic-bezier(0.32, 1.4, 0.64, 1) both',
+            }}>
+              <style>{`
+                @keyframes pm-shelter-slide-in {
+                  from { transform: translateX(-40px) scale(0.94); opacity: 0; }
+                  to   { transform: translateX(0)     scale(1);    opacity: 1; }
+                }
+              `}</style>
+              {/* "Shelter view" label above the second phone */}
+              <div style={{
+                position: 'absolute', top: -36, left: '50%', transform: 'translateX(-50%)',
+                padding: '6px 14px', borderRadius: 14, background: '#0034FF', color: '#FFF',
+                fontFamily: 'Geist Mono, monospace', fontSize: 11, fontWeight: 700,
+                letterSpacing: 1.4, textTransform: 'uppercase', whiteSpace: 'nowrap',
+                boxShadow: '0 6px 16px rgba(0,52,255,0.34)',
+              }}>
+                <span style={{ marginRight: 6 }}>●</span> Shelter view · live
+              </div>
+              <IOSDevice width={402} height={874}>
+                <div style={{ position: 'absolute', inset: 0 }}>
+                  <ShelterDemoView/>
+                </div>
+              </IOSDevice>
+            </div>
+          )}
         </div>
       );
     }
