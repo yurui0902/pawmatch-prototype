@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>PawMatch — Three-sided prototype</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Archivo+Black&family=Archivo:wght@400;500;600;700;800;900&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; background: #FCF6EC;
+      font-family: 'Geist', -apple-system, system-ui, sans-serif; color: #1F1F3A;
+      -webkit-font-smoothing: antialiased; }
+    .wrap { max-width: 880px; margin: 0 auto; padding: 56px 24px 80px; }
+    .eyebrow { font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 1.5px;
+      text-transform: uppercase; color: #FF0083; font-weight: 600; }
+    h1 { font-family: 'Archivo Black', sans-serif; font-size: 56px; font-weight: 400;
+      letter-spacing: -1.4px; line-height: 0.95; margin: 12px 0 14px; }
+    h1 em { color: #FF0083; font-style: italic; }
+    .lead { font-family: 'Geist', sans-serif; font-size: 17px; color: #5F5F7A; line-height: 1.5; max-width: 580px; margin-bottom: 40px; }
+    .grid { display: grid; gap: 18px; grid-template-columns: 1fr; }
+    @media (min-width: 720px) { .grid { grid-template-columns: 1fr 1fr 1fr; } }
+    .card { background: #FFFFFF; border-radius: 24px; padding: 24px;
+      box-shadow: 0 1px 3px rgba(20,20,40,0.04), 0 12px 30px rgba(20,20,40,0.06);
+      text-decoration: none; color: inherit; display: flex; flex-direction: column;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      border-top: 4px solid #FF0083;
+    }
+    .card:hover { transform: translateY(-3px); box-shadow: 0 4px 8px rgba(20,20,40,0.06), 0 18px 40px rgba(20,20,40,0.10); }
+    .card.shelter { border-top-color: #0034FF; }
+    .card.vet     { border-top-color: #00C46A; }
+    .badge { font-family: 'Geist Mono', monospace; font-size: 10px; letter-spacing: 1.4px;
+      text-transform: uppercase; color: #FF0083; font-weight: 700; display: inline-flex;
+      align-items: center; gap: 6px; }
+    .badge::before { content: ''; width: 6px; height: 6px; border-radius: 3px; background: currentColor; }
+    .card.shelter .badge { color: #0034FF; }
+    .card.vet     .badge { color: #00C46A; }
+    h2 { font-family: 'Archivo Black', sans-serif; font-size: 28px; font-weight: 400;
+      letter-spacing: -0.6px; line-height: 1.05; margin: 10px 0 8px; }
+    h2 em { color: #FF0083; font-style: italic; }
+    .desc { font-family: 'Geist', sans-serif; font-size: 14px; color: #5F5F7A; line-height: 1.5; flex: 1; }
+    .open { margin-top: 18px; padding: 12px 20px; border-radius: 22px; background: #FF0083;
+      color: #FFF; font-family: 'Geist', sans-serif; font-size: 14px; font-weight: 600;
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px; align-self: flex-start; }
+    .card.shelter .open { background: #0034FF; }
+    .card.vet     .open { background: #00C46A; }
+    .meta { margin-top: 56px; padding-top: 28px; border-top: 1px solid rgba(0,0,0,0.08);
+      font-family: 'Geist Mono', monospace; font-size: 11px; color: #5F5F7A; letter-spacing: 0.4px; }
+    .meta a { color: #FF0083; text-decoration: none; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="eyebrow">PawMatch · interactive prototype</div>
+    <h1>One platform.<br/><em>Three sides.</em></h1>
+    <p class="lead">
+      A mobile prototype for pet adoption — built end-to-end across the adopter, shelter, and
+      veterinary clinic experiences. Sarah Chen adopts Poppy from Willow Creek Rescue, then
+      brings her to Forest Park Veterinary. The same story shows up on every side.
+    </p>
+
+    <div class="grid">
+      <a class="card adopter" href="PawMatch-standalone.html">
+        <span class="badge">For adopters</span>
+        <h2>Swipe, match, <em>adopt</em>.</h2>
+        <p class="desc">
+          Discover pets nearby, save them, complete one shared application, book the first
+          vet visit, and enroll in insurance — all in one flow.
+        </p>
+        <span class="open">Open adopter app →</span>
+      </a>
+
+      <a class="card shelter" href="PawMatch-Shelter-standalone.html">
+        <span class="badge">For shelters</span>
+        <h2>More homes,<br/><em>less paperwork</em>.</h2>
+        <p class="desc">
+          One inbox for applications, AI-verified forms, multi-stage review,
+          and a direct line to every adopter.
+        </p>
+        <span class="open">Open shelter app →</span>
+      </a>
+
+      <a class="card vet" href="PawMatch-Vet-standalone.html">
+        <span class="badge">For vet clinics</span>
+        <h2>AI notes,<br/><em>instant claims</em>.</h2>
+        <p class="desc">
+          Record a visit, get a draft SOAP note, and file an insurance claim
+          in one tap. Track every appointment, note, and claim in one place.
+        </p>
+        <span class="open">Open vet app →</span>
+      </a>
+    </div>
+
+    <div class="meta">
+      Each link opens a self-contained HTML prototype — no server needed.
+      The cross-end demo follows <strong style="color:#1F1F3A">Sarah Chen + Poppy</strong>
+      through all three apps.
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,5 @@
+assets/splash-hero.b64.txt
+uploads/
+.DS_Store
+*.pyc
+__pycache__/
