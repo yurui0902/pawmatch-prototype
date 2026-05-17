@@ -74,11 +74,7 @@ function ShelterPetRow({ pet, onClick }) {
       background: PM.white, border: 'none', cursor: 'pointer', textAlign: 'left',
       boxShadow: '0 1px 2px rgba(20,20,40,0.03), 0 6px 18px rgba(20,20,40,0.04)',
     }}>
-      <div style={{
-        width: 60, height: 60, borderRadius: 16, flexShrink: 0,
-        background: `${PM.coralSoft}80`,
-        display: 'flex', alignItems: 'flex-end', justifyContent: 'center', overflow: 'hidden',
-      }}>{Art ? <Art size={60}/> : null}</div>
+      <PetAvatar petKey={pet.key} size={60} rounded={16}/>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
           <div style={{ fontFamily: FONT_DISPLAY, fontSize: 22, color: PM.night, letterSpacing: -0.3, lineHeight: 1 }}>{pet.name}</div>
@@ -116,10 +112,12 @@ function ShelterPetDetailScreen({ pet, onBack }) {
     <div style={{ position: 'absolute', inset: 0, background: PM.cream, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <div style={{
         position: 'relative', height: 280,
-        background: `linear-gradient(160deg, ${PM.coralSoft} 0%, #FFE4F0 100%)`,
+        background: (window.__pmPetPhotos && window.__pmPetPhotos[pet.key])
+          ? `url("${window.__pmPetPhotos[pet.key]}") center / cover no-repeat`
+          : `linear-gradient(160deg, ${PM.coralSoft} 0%, #FFE4F0 100%)`,
         display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
       }}>
-        {Art ? <Art size={220}/> : null}
+        {!(window.__pmPetPhotos && window.__pmPetPhotos[pet.key]) && Art ? <Art size={220}/> : null}
         <button onClick={onBack} style={{
           position: 'absolute', top: 56, left: 16,
           width: 40, height: 40, borderRadius: 20,

@@ -207,13 +207,7 @@ function TopPetRow({ pet, rank, onClick }) {
         fontFamily: FONT_DISPLAY, fontSize: 14, flexShrink: 0,
         opacity: rank === 1 ? 1 : 0.85 - (rank - 1) * 0.15,
       }}>{rank}</div>
-      <div style={{
-        width: 40, height: 40, borderRadius: 12,
-        background: `${PM.coralSoft}80`,
-        display: 'flex', alignItems: 'flex-end', justifyContent: 'center', overflow: 'hidden', flexShrink: 0,
-      }}>
-        {Art ? <Art size={42}/> : null}
-      </div>
+      <PetAvatar petKey={pet.key} size={40} rounded={12}/>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontFamily: FONT_BODY, fontSize: 14, color: PM.night, fontWeight: 600 }}>
           {pet.name} <span style={{ color: PM.inkFaint, fontWeight: 400 }}>· {pet.breed}</span>

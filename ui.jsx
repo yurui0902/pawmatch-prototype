@@ -324,6 +324,45 @@ function PetPhotoSlot({ petKey, label = "PHOTO", size = "100%", bg = "#F2F2F2", 
   );
 }
 
+// ─── Pet avatar (photo or illustration fallback) ──────────
+// Used everywhere a pet's face appears.  Prefers the real photo baked into
+// window.__pmPetPhotos; falls back to the hand-drawn SVG in PETS if no
+// photo is registered for that key.
+
+function PetAvatar({ petKey, size = 60, rounded = 16, accent }) {
+  const pet = (typeof PETS !== 'undefined' && PETS[petKey]) || null;
+  const photo = (window.__pmPetPhotos && window.__pmPetPhotos[petKey]) || (pet && pet.photo);
+  const radius = (typeof rounded === 'number') ? rounded : rounded;
+  if (photo) {
+    return (
+      <div style={{
+        width: size, height: size, borderRadius: radius,
+        flexShrink: 0, overflow: 'hidden',
+        background: '#F3F3F3',
+      }}>
+        <img src={photo} alt={pet ? pet.name : ''} style={{
+          width: '100%', height: '100%', objectFit: 'cover', display: 'block',
+        }}/>
+      </div>
+    );
+  }
+  // Illustration fallback — keeps the colored gradient backdrop.
+  if (!pet) return null;
+  const Art = pet.Art;
+  const bg = accent || pet.color || '#FFE3B0';
+  const accentColor = pet.accent || '#FF8466';
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: radius,
+      flexShrink: 0, overflow: 'hidden',
+      background: `radial-gradient(ellipse at 50% 100%, ${accentColor}55 0%, ${bg} 70%)`,
+      display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+    }}>
+      {Art && <Art size={size}/>}
+    </div>
+  );
+}
+
 // ─── Splash animation FX ───────────────────────────────────
 // Floating hearts + twinkling sparkles + gentle bob, layered over the splash
 // hero image. The image itself is a flat JPEG, so we keep the motion in cute
@@ -425,5 +464,5 @@ function EmptyState({ title, sub, cta, onCta, icon }) {
 
 Object.assign(window, {
   PM, FONT_DISPLAY, FONT_SERIF, FONT_BODY, FONT_MONO,
-  PMButton, Chip, Surface, PetPortrait, PetPhotoSlot, TabBar, TopBar, EmptyState, SplashFX,
+  PMButton, Chip, Surface, PetPortrait, PetPhotoSlot, TabBar, TopBar, EmptyState, SplashFX, PetAvatar,
 });

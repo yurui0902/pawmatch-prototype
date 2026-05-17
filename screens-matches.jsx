@@ -187,13 +187,7 @@ function MatchRow({ petKey, met, total, status, age, onClick }) {
         .pm-cta-submitting { animation: pm-circle-pulse 0.9s ease-out; }
         .pm-check { animation: pm-check-pop 0.36s cubic-bezier(0.34, 1.56, 0.64, 1) 0.18s both; }
       `}</style>
-      <div style={{
-        width: 64, height: 64, borderRadius: 18, flexShrink: 0,
-        background: `radial-gradient(ellipse at 50% 100%, ${pet.accent}55 0%, ${pet.color} 70%)`,
-        display: 'flex', alignItems: 'flex-end', justifyContent: 'center', overflow: 'hidden',
-      }}>
-        <Art size={62}/>
-      </div>
+      <PetAvatar petKey={petKey} size={64} rounded={18}/>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
           <div style={{ fontFamily: FONT_DISPLAY, fontSize: 22, color: PM.night, letterSpacing: -0.3, lineHeight: 1 }}>{pet.name}</div>
@@ -315,13 +309,7 @@ function ChatRow({ who, sub, preview, age, unread, petKey, onClick }) {
       background: 'transparent', border: 'none', borderBottom: `1px solid ${PM.lineSoft}`,
       cursor: 'pointer', textAlign: 'left',
     }}>
-      <div style={{
-        width: 50, height: 50, borderRadius: 25, flexShrink: 0,
-        background: `radial-gradient(circle at 50% 100%, ${pet?.accent}55 0%, ${pet?.color || PM.creamDark} 70%)`,
-        display: 'flex', alignItems: 'flex-end', justifyContent: 'center', overflow: 'hidden',
-      }}>
-        {Art && <Art size={50}/>}
-      </div>
+      <PetAvatar petKey={petKey} size={50} rounded={25}/>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
           <div style={{ fontFamily: FONT_BODY, fontSize: 14, fontWeight: 600, color: PM.night }}>{who}</div>
@@ -371,13 +359,7 @@ function ChatThreadScreen({ goto, params }) {
         }}>
           <svg width="13" height="13" viewBox="0 0 13 13"><path d="M8 1 L 3 6.5 L 8 12" stroke={PM.night} strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
         </button>
-        <div style={{
-          width: 38, height: 38, borderRadius: 19, overflow: 'hidden',
-          background: `radial-gradient(circle at 50% 100%, ${pet.accent}55 0%, ${pet.color} 70%)`,
-          display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-        }}>
-          <Art size={38}/>
-        </div>
+        <PetAvatar petKey={params.pet || 'poppy'} size={38} rounded={19}/>
         <div style={{ flex: 1 }}>
           <div style={{ fontFamily: FONT_BODY, fontSize: 14, fontWeight: 600, color: PM.night }}>Willow Creek Rescue</div>
           <div style={{ fontFamily: FONT_BODY, fontSize: 11, color: PM.mint, display: 'flex', alignItems: 'center', gap: 4 }}>

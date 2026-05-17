@@ -46,6 +46,16 @@ def build(src, out):
     if splash.exists():
         asset_lines.append(f'  window.__PAWMATCH_SPLASH_HERO__ = "{data_url(splash)}";')
 
+    # Pet photos — each becomes window.__pmPetPhotos[key]
+    pets_dir = HERE / "assets" / "pets"
+    if pets_dir.is_dir():
+        pet_files = sorted(pets_dir.glob("*.jpg"))
+        if pet_files:
+            asset_lines.append('  window.__pmPetPhotos = window.__pmPetPhotos || {};')
+            for pf in pet_files:
+                key = pf.stem  # e.g. "poppy", "hope"
+                asset_lines.append(f'  window.__pmPetPhotos["{key}"] = "{data_url(pf)}";')
+
     if asset_lines:
         asset_block = (
             "<script>\n  /* PawMatch baked-in assets — injected by build_standalone.py */\n"

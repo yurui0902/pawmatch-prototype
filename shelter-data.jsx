@@ -17,18 +17,25 @@ const SHELTER = {
 // applicable (poppy + max are Willow Creek pets). Extras are shelter-only.
 const SHELTER_PETS = [
   {
-    key: 'poppy', name: 'Poppy', breed: 'Golden Retriever Mix', age: '2 yr', kind: 'dog',
+    key: 'poppy', name: 'Poppy', breed: 'Dalmatian / English Setter Mix', age: '2 yr', kind: 'dog',
     status: 'Live', appCount: 6, swipes: 284, likes: 42, likeRate: 0.148, fee: 250,
     requirements: ['Kids OK', 'Fenced yard', 'Dog-experienced'],
     description: "Energetic, kid-friendly, house-trained. Loves long walks and the couch in equal measure.",
     medical: 'Fully vaccinated · Spayed · Microchipped',
   },
   {
-    key: 'max', name: 'Max', breed: 'Labrador Retriever', age: '5 yr', kind: 'dog',
+    key: 'max', name: 'Bear', breed: 'Black Labrador Puppy', age: '6 mo', kind: 'dog',
     status: 'Live', appCount: 2, swipes: 96, likes: 11, likeRate: 0.115, fee: 220,
-    requirements: ['Fenced yard', 'Large-dog space', 'Daily exercise'],
-    description: "Trained, loyal, fetch pro. Took manners class and asks for refreshers.",
-    medical: 'Fully vaccinated · Neutered',
+    requirements: ['Active home', 'Crate-training', 'Puppy patience'],
+    description: "Velvet-coated little tornado. Loves chew toys and ear scritches.",
+    medical: 'First-round vaccinations · Neutered scheduled',
+  },
+  {
+    key: 'clover', name: 'Hope', breed: 'Boxer Mix', age: '7 yr', kind: 'dog',
+    status: 'Live', appCount: 4, swipes: 132, likes: 19, likeRate: 0.144, fee: 185,
+    requirements: ['Calm home', 'Senior-friendly', 'No stairs'],
+    description: "Senior boxer girl with retired-athlete vibes. Wants the comfy chair and polite walks.",
+    medical: 'Vaccinated · On joint supplement',
   },
   {
     key: 'biscuit', name: 'Biscuit', breed: 'Border Collie Mix', age: '3 yr', kind: 'dog',
@@ -36,13 +43,6 @@ const SHELTER_PETS = [
     requirements: ['Active home', 'Fenced yard'],
     description: "Smart, busy, needs a job. New intake — photos and bio still in progress.",
     medical: 'Intake exam pending',
-  },
-  {
-    key: 'sage', name: 'Sage', breed: 'Lab/Hound Mix', age: '7 yr', kind: 'dog',
-    status: 'Paused', appCount: 4, swipes: 132, likes: 19, likeRate: 0.144, fee: 150,
-    requirements: ['Calm home', 'Senior-friendly', 'No stairs'],
-    description: "Sweet older girl, looking for a slow-paced retirement home.",
-    medical: 'Vaccinated · On joint supplement',
   },
 ];
 
@@ -84,21 +84,21 @@ const APPLICATIONS = [
     id: 'a2', applicant: 'Jordan Pham', initials: 'JP', petKey: 'max',
     household: 'Couple', location: 'NE Portland · 3.2 mi', age: '5h', stage: 'scheduled',
     preApp: {
-      whyAdopt: 'We have the time and space and Max looks like a champ.',
-      favorite: 'A trained lab is a dream — we want to keep his manners class going.',
-      fit: 'Big yard, no kids yet, both work hybrid.',
+      whyAdopt: 'We have time, space, and patience for a puppy. Bear looks ready for it all.',
+      favorite: "Those eyes. Also that he's at the perfect age to grow up with us.",
+      fit: 'Big yard, no kids yet, both work hybrid. We can do crate training.',
     },
     fullForm: { adults: '2', children: '0', home: 'Own · ranch', yard: 'Fully fenced', otherPets: 'None',
                 vet: { name: 'Pearl District Animal Hospital', dr: 'Dr. Nguyen', inNetwork: true },
-                routine: 'Morning jog plus evening park visit.', experience: 'Foster volunteer for 3 years' },
+                routine: 'Morning walk plus evening park visit.', experience: 'Foster volunteer for 3 years' },
     aiChecks: [
       { label: 'Shelter registered on PawMatch', ok: true },
       { label: "Form matches Willow Creek's template", ok: true },
-      { label: 'Record found (Max → Jordan Pham)', ok: true },
+      { label: 'Record found (Bear → Jordan Pham)', ok: true },
     ],
   },
   {
-    id: 'a3', applicant: 'Priya Raman', initials: 'PR', petKey: 'sage',
+    id: 'a3', applicant: 'Priya Raman', initials: 'PR', petKey: 'clover',
     household: 'Single', location: 'SE Portland · 4.5 mi', age: '1d', stage: 'meeting',
     preApp: {
       whyAdopt: 'A calm senior is exactly what my apartment needs.',
@@ -111,7 +111,7 @@ const APPLICATIONS = [
     aiChecks: [
       { label: 'Shelter registered on PawMatch', ok: true },
       { label: "Form matches Willow Creek's template", ok: true },
-      { label: 'Record found (Sage → Priya Raman)', ok: true },
+      { label: 'Record found (Hope → Priya Raman)', ok: true },
     ],
     homeVisit: { scheduled: 'Sun Apr 14 · 11:00 AM', completed: true, notes: 'Quiet apartment, all checks passed.' },
   },
@@ -129,8 +129,8 @@ const APPLICATIONS = [
 // Shelter-side conversation list. Sarah Chen's thread is the demo.
 const SHELTER_CHATS = [
   { who: 'Sarah Chen',   sub: 'About Poppy 🐕', petKey: 'poppy', preview: 'Saturday 2pm works for us.',         age: '2h',  unread: 1 },
-  { who: 'Jordan Pham',  sub: 'About Max 🐕',   petKey: 'max',   preview: "Can we bring our parents to meet?",   age: '5h',  unread: 0 },
-  { who: 'Priya Raman',  sub: 'About Sage 🐕',  petKey: 'sage',  preview: 'Home visit went really well, thanks.', age: '1d',  unread: 0 },
+  { who: 'Jordan Pham',  sub: 'About Bear 🐕',  petKey: 'max',   preview: "Can we bring our parents to meet?",   age: '5h',  unread: 0 },
+  { who: 'Priya Raman',  sub: 'About Hope 🐕',  petKey: 'clover',  preview: 'Home visit went really well, thanks.', age: '1d',  unread: 0 },
   { who: 'Marcus Lee',   sub: 'About Poppy 🐕', petKey: 'poppy', preview: "Just submitted — looking forward.",   age: '4h',  unread: 1 },
 ];
 

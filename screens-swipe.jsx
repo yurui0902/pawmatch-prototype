@@ -3,7 +3,7 @@
 
 const FEED = [
   {
-    key: 'poppy', name: 'Poppy', age: '2 yr', breed: 'Golden Retriever Mix',
+    key: 'poppy', name: 'Poppy', age: '2 yr', breed: 'Dalmatian / English Setter Mix',
     shelter: 'Willow Creek', dist: '1.2 mi', fee: 250,
     traits: ['Kid-friendly', 'House-trained', 'Energetic'], kind: 'dog',
     bio: "Poppy treats every walk like a discovery mission. She's house-trained, gentle with kids, and a champion napper after dinner. Best home: somewhere with a yard and a couch she can share with you.",
@@ -17,10 +17,10 @@ const FEED = [
     ],
   },
   {
-    key: 'miso', name: 'Miso', age: '1 yr', breed: 'Domestic Shorthair',
-    shelter: 'Pearl Cats', dist: '2.8 mi', fee: 95,
+    key: 'miso', name: 'Satoru', age: '4 yr', breed: 'Long-haired Tabby',
+    shelter: 'Rose City Cat Rescue', dist: '2.8 mi', fee: 110,
     traits: ['Lap cat', 'Quiet', 'Indoor'], kind: 'cat',
-    bio: "Miso would like to interview you from your lap, thanks. She prefers quiet evenings, sunny windowsills, and being told she's pretty. A single-pet home with adults or older kids is her ideal landing spot.",
+    bio: "Satoru would like to interview you from your lap, thanks. He prefers quiet evenings, sunny windowsills, and being told he's pretty. A single-pet home with adults or older kids is his ideal landing spot.",
     reqs: [
       { label: 'Age 21+',                met: true },
       { label: 'Indoor-only commitment', met: true },
@@ -31,10 +31,10 @@ const FEED = [
     ],
   },
   {
-    key: 'clover', name: 'Clover', age: '4 yr', breed: 'Beagle Mix',
+    key: 'clover', name: 'Hope', age: '7 yr', breed: 'Boxer Mix',
     shelter: 'Rose Rescue', dist: '3.5 mi', fee: 185,
-    traits: ['Calm', 'Senior-friendly', 'Loves walks'], kind: 'dog',
-    bio: "Clover has been around long enough to know the good life is a slow walk and a warm bed. She's calm, easygoing, and the perfect copilot for a low-key household. She'd love patient humans and a senior-friendly home.",
+    traits: ['Calm', 'Senior-friendly', 'Loves naps'], kind: 'dog',
+    bio: "Hope has been around long enough to know the good life is a slow walk and a warm chair. She's calm, easygoing, and the perfect copilot for a low-key household. She'd love patient humans and a senior-friendly home.",
     reqs: [
       { label: 'Age 21+',                    met: true },
       { label: 'Calm home environment',      met: true },
@@ -44,10 +44,10 @@ const FEED = [
     ],
   },
   {
-    key: 'olive', name: 'Olive', age: '3 yr', breed: 'Tortoiseshell',
+    key: 'olive', name: 'May', age: '3 yr', breed: 'Domestic Tabby',
     shelter: 'Pearl Cats', dist: '2.8 mi', fee: 110,
     traits: ['Playful', 'Vocal', 'Indoor'], kind: 'cat',
-    bio: "Olive contains multitudes — she'll chirp at birds, headbutt your phone, and curl up on your keyboard mid-Zoom. She's playful, vocal, and needs people who think her commentary is the best part of the day.",
+    bio: "May contains multitudes — she'll chirp at birds, headbutt your phone, and curl up on your keyboard mid-Zoom. She's playful, vocal, and needs people who think her commentary is the best part of the day.",
     reqs: [
       { label: 'Age 21+',                met: true },
       { label: 'Indoor-only commitment', met: true },
@@ -58,29 +58,16 @@ const FEED = [
     ],
   },
   {
-    key: 'max', name: 'Max', age: '5 yr', breed: 'Labrador Retriever',
+    key: 'max', name: 'Bear', age: '6 mo', breed: 'Black Labrador Puppy',
     shelter: 'Willow Creek', dist: '1.2 mi', fee: 220,
-    traits: ['Trained', 'Fetch pro', 'Loyal'], kind: 'dog',
-    bio: "Max is a charming five-year-old lab who has aced his manners class and still wants to retake it for fun. He's loyal, eager, and would love a household that throws a tennis ball at least twice a day. Fenced yard recommended.",
+    traits: ['Puppy', 'Crate-training', 'Big eyes'], kind: 'dog',
+    bio: "Bear is a velvet-coated little tornado who has already aced sit, almost has down, and is studying for stay. Loves chew toys, ear scritches, and learning his name (we're getting there).",
     reqs: [
       { label: 'Age 21+',                   met: true },
-      { label: 'Fenced yard',               met: true },
-      { label: 'Large-dog space',           met: true },
-      { label: 'Daily exercise commitment', met: false, action: 'Answer' },
-      { label: 'Training reinforcement',    met: false, action: 'Answer' },
-    ],
-  },
-  {
-    key: 'pepper', name: 'Pepper', age: '2 yr', breed: 'Holland Lop',
-    shelter: 'Tiny Tails', dist: '4.1 mi', fee: 45,
-    traits: ['Litter-trained', 'Curious', 'Bonded'], kind: 'rabbit',
-    bio: "Pepper is a Holland Lop with strong opinions and softer ears. She's litter-trained, ridiculously curious, and bonded with her sister Sage — they're hoping to be adopted as a pair. Bunny-experienced homes preferred.",
-    reqs: [
-      { label: 'Age 21+',                met: true },
-      { label: 'Indoor enclosure',       met: true },
-      { label: 'Rabbit-proofed space',   met: false, action: 'Confirm' },
-      { label: 'Vegetable diet plan',    met: false, action: 'Plan' },
-      { label: 'Bonded-pair commitment', met: false, action: 'Decide' },
+      { label: 'Active home',               met: true },
+      { label: 'Crate-training commitment', met: true },
+      { label: 'Puppy patience',            met: false, action: 'Answer' },
+      { label: 'Vet schedule plan',         met: false, action: 'Plan' },
     ],
   },
 ];
@@ -454,7 +441,6 @@ function SwipeScreen({ goto, tab, setTab, petTypes }) {
 // ─── Traditional list row used in search mode ──────────────
 
 function SearchResultRow({ pet, onTap, onLike }) {
-  const ArtComp = window[PET_ART[pet.key]] || window.Pet_Poppy;
   return (
     <div style={{
       display: 'flex', gap: 12, padding: 12, borderRadius: 18,
@@ -465,13 +451,7 @@ function SearchResultRow({ pet, onTap, onLike }) {
         flex: 1, minWidth: 0, display: 'flex', gap: 12, padding: 0,
         background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left',
       }}>
-        <div style={{
-          width: 64, height: 64, borderRadius: 16, flexShrink: 0,
-          background: `linear-gradient(160deg, ${SOFT_PINK} 0%, #FFE4F0 100%)`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
-        }}>
-          {ArtComp ? <ArtComp size={66}/> : null}
-        </div>
+        <PetAvatar petKey={pet.key} size={64} rounded={16}/>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
             <div style={{ fontFamily: FONT_DISPLAY, fontSize: 20, color: PM.night, letterSpacing: -0.3, lineHeight: 1 }}>{pet.name}</div>
@@ -619,13 +599,15 @@ function SwipeCard({ pet, overlayLike = 0, overlayNope = 0, overlayUp = 0, style
       boxShadow: '0 10px 30px rgba(20,20,40,0.12), 0 2px 6px rgba(20,20,40,0.05)',
       ...style,
     }}>
-      {/* PHOTO AREA — soft pink with hand-drawn pet illustration */}
+      {/* PHOTO AREA — real photo if available, else gradient + illustration */}
       <div style={{
         height: '60%', position: 'relative', overflow: 'hidden',
-        background: `linear-gradient(160deg, ${SOFT_PINK} 0%, #FFE4F0 100%)`,
+        background: (window.__pmPetPhotos && window.__pmPetPhotos[pet.key])
+          ? `url("${window.__pmPetPhotos[pet.key]}") center / cover no-repeat`
+          : `linear-gradient(160deg, ${SOFT_PINK} 0%, #FFE4F0 100%)`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
-        {ArtComp ? <ArtComp size={220}/> : null}
+        {!(window.__pmPetPhotos && window.__pmPetPhotos[pet.key]) && ArtComp ? <ArtComp size={220}/> : null}
 
         {/* distance chip — soft white pill */}
         <div style={{
@@ -818,14 +800,7 @@ function MatchCheckOverlay({ pet, onClose, onContinue }) {
 
         {/* header — avatar + name */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 14, marginBottom: 18 }}>
-          <div style={{
-            width: 72, height: 72, borderRadius: '50%',
-            background: `linear-gradient(160deg, ${SOFT_PINK}, #FFE4F0)`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            flexShrink: 0, overflow: 'hidden',
-          }}>
-            {ArtComp ? <ArtComp size={84}/> : null}
-          </div>
+          <PetAvatar petKey={pet.key} size={72} rounded={36}/>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 4,
@@ -1145,6 +1120,7 @@ function PetDetailScreen({ pet, onBack, onApply }) {
   const ArtComp = window[PET_ART[pet.key]] || window.Pet_Poppy;
   const reqs = pet.reqs || [];
   const previewReqs = reqs.slice(0, 3);
+  const photo = window.__pmPetPhotos && window.__pmPetPhotos[pet.key];
 
   return (
     <div style={{ position: 'absolute', inset: 0, background: PM.cream, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -1152,11 +1128,13 @@ function PetDetailScreen({ pet, onBack, onApply }) {
       <div style={{
         position: 'relative',
         height: 360,
-        background: `linear-gradient(160deg, ${SOFT_PINK} 0%, #FFE4F0 100%)`,
+        background: photo
+          ? `url("${photo}") center / cover no-repeat`
+          : `linear-gradient(160deg, ${SOFT_PINK} 0%, #FFE4F0 100%)`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         flexShrink: 0,
       }}>
-        {ArtComp ? <ArtComp size={260}/> : null}
+        {!photo && ArtComp ? <ArtComp size={260}/> : null}
 
         {/* back button */}
         <button onClick={onBack} style={{
