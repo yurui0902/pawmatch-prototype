@@ -203,7 +203,15 @@ function ShelterAppReviewScreen({ app, onBack, goto, setTab }) {
       </div>
 
       <div style={{ flex: 1, overflow: 'auto', padding: '12px 20px 120px' }}>
-        {sm.key === 'pre-app'   && <PreAppPanel app={app}/>}
+        {sm.key === 'pre-app'   && <PreAppPanel
+            app={app}
+            onDecline={() => setDecision('declined')}
+            onApprove={() => {
+              setDecision('approved');
+              const idx = APP_STAGES.findIndex(s => s.key === 'approved');
+              if (idx >= 0) setActiveStage(idx);
+            }}
+        />}
         {sm.key === 'scheduled' && <ScheduledPanel
             app={app}
             isSarah={isSarah}
@@ -239,6 +247,9 @@ function ShelterAppReviewScreen({ app, onBack, goto, setTab }) {
         sentTime={sentTime}
         sentAccepted={sentAccepted}
         onMessage={() => { setTab('chat'); goto('chatThread', { pet: app.petKey }); }}
+        onNext={() => {
+          if (activeStage < APP_STAGES.length - 1) setActiveStage(activeStage + 1);
+        }}
         onDecline={() => setDecision('declined')}
         onApprove={() => {
           setDecision('approved');
@@ -274,7 +285,7 @@ function ShelterAppReviewScreen({ app, onBack, goto, setTab }) {
 function ReviewBottomBar(props) {
   const {
     stageKey, isSarah, pickedSlot, sentTime, sentAccepted,
-    onMessage, onDecline, onApprove,
+    onMessage, onNext, onDecline, onApprove,
     onSendMeeting, onCancelMeeting, onReschedule,
   } = props;
 
@@ -316,10 +327,22 @@ function ReviewBottomBar(props) {
     }}>Approve →</button>
   );
 
-  if (stageKey === 'pre-app') return bar([
-    React.cloneElement(messageBtn, { key: 'm' }),
-    React.cloneElement(declineBtn, { key: 'd' }),
-  ]);
+  if (stageKey === 'pre-app') {
+    // Decline / Approve live inside the panel now; the bar just moves on.
+    const nextBtn = (
+      <button key="n" onClick={onNext} style={{
+        flex: 1.6, height: 50, borderRadius: 25,
+        background: PM.night, color: PM.cream, border: 'none',
+        fontFamily: FONT_BODY, fontSize: 14, fontWeight: 600, cursor: 'pointer',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+        boxShadow: '0 6px 16px rgba(0,0,0,0.18)',
+      }}>Next →</button>
+    );
+    return bar([
+      React.cloneElement(messageBtn, { key: 'm' }),
+      nextBtn,
+    ]);
+  }
 
   if (stageKey === 'scheduled') {
     let middle;
@@ -409,7 +432,7 @@ function QABlock({ q, a }) {
   );
 }
 
-function PreAppPanel({ app }) {
+function PreAppPanel({ app, onDecline, onApprove }) {
   const p = app.preApp || {};
   return (
     <>
@@ -423,6 +446,30 @@ function PreAppPanel({ app }) {
         <FactRow label="Location"  value={app.location}/>
         <FactRow label="Submitted" value={`${app.age} ago`} last/>
       </ReviewSection>
+
+      {/* Inline Decline / Approve so the reviewer can decide right here. */}
+      <div style={{
+        marginTop: 4, padding: 14, borderRadius: 18,
+        background: PM.white, boxShadow: '0 1px 3px rgba(20,20,40,0.04)',
+      }}>
+        <div style={{ fontFamily: FONT_BODY, fontSize: 12, color: PM.inkSoft, marginBottom: 10 }}>
+          Make a quick call now, or tap <strong style={{ color: PM.night }}>Next →</strong> to
+          schedule a meet & greet first.
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={onDecline} style={{
+            flex: 1, height: 44, borderRadius: 22,
+            background: 'transparent', color: PM.inkSoft, border: `1.5px solid ${PM.line}`,
+            cursor: 'pointer', fontFamily: FONT_BODY, fontSize: 13, fontWeight: 600,
+          }}>Decline</button>
+          <button onClick={onApprove} style={{
+            flex: 1.4, height: 44, borderRadius: 22,
+            background: PM.coral, color: '#FFF', border: 'none', cursor: 'pointer',
+            fontFamily: FONT_BODY, fontSize: 13, fontWeight: 700,
+            boxShadow: '0 4px 12px rgba(255,0,131,0.30)',
+          }}>Approve adoption →</button>
+        </div>
+      </div>
     </>
   );
 }

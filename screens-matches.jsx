@@ -57,7 +57,16 @@ function MatchesScreen({ goto, tab, setTab, matches: matchesProp }) {
         ) : (
           <>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {filtered.map(m => <MatchRow key={m.petKey} {...m} onClick={() => m.status === 'incomplete' ? goto('matchCheck', { pet: m.petKey }) : goto('chat', { pet: m.petKey })}/>)}
+              {filtered.map(m => <MatchRow key={m.petKey} {...m} onClick={() => {
+                if (m.status === 'incomplete') {
+                  goto('matchCheck', { pet: m.petKey });
+                } else {
+                  // Skip the Chat tab list — drop straight into the conversation
+                  // with the shelter for that pet.
+                  setTab('chat');
+                  goto('chatThread', { pet: m.petKey });
+                }
+              }}/>)}
             </div>
 
             <div style={{
@@ -202,22 +211,32 @@ function MatchRow({ petKey, met, total, status, age, onClick }) {
         </div>
       </div>
       {meetingTime && !meetingAccepted && !submitting ? (
-        // Accept-the-meeting affordance — replaces the right CTA while the
-        // adopter hasn't responded yet. Uses a span so we don't nest <button>.
-        <span
-          role="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            if (window.__pmDemoActions) window.__pmDemoActions.acceptMeeting();
-          }}
-          style={{
-            padding: '8px 14px', borderRadius: 14, flexShrink: 0,
-            background: PM.coral, color: '#FFF',
-            fontFamily: FONT_BODY, fontSize: 12, fontWeight: 700, cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-            boxShadow: '0 4px 10px rgba(255,0,131,0.32)',
-          }}
-        >Accept ✓</span>
+        // Meeting-proposed affordances: Accept (coral) or Reschedule (outline).
+        // Reschedule drops the user into the chat with the shelter so they can
+        // negotiate a new time inline.  Spans avoid nested <button>.
+        <div style={{
+          display: 'flex', flexDirection: 'column', gap: 5, flexShrink: 0, minWidth: 92,
+        }}>
+          <span role="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (window.__pmDemoActions) window.__pmDemoActions.acceptMeeting();
+            }}
+            style={{
+              padding: '6px 12px', borderRadius: 12, textAlign: 'center',
+              background: PM.coral, color: '#FFF', cursor: 'pointer',
+              fontFamily: FONT_BODY, fontSize: 12, fontWeight: 700,
+              boxShadow: '0 3px 8px rgba(255,0,131,0.30)',
+            }}>Accept ✓</span>
+          <span role="button"
+            onClick={(e) => { e.stopPropagation(); onClick(); }}
+            style={{
+              padding: '5px 10px', borderRadius: 12, textAlign: 'center',
+              background: 'transparent', color: PM.inkSoft,
+              border: `1px solid ${PM.line}`, cursor: 'pointer',
+              fontFamily: FONT_BODY, fontSize: 11, fontWeight: 600,
+            }}>Reschedule</span>
+        </div>
       ) : (
         <div className={`pm-cta ${submitting ? 'pm-cta-submitting' : ''}`} style={{
           ...baseCtaStyle,

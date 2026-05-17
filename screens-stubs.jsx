@@ -295,7 +295,22 @@ function VetDetailScreen({ goto, onBack, params }) {
           <div style={{ fontFamily: FONT_BODY, fontSize: 12, opacity: 0.7, marginTop: 4 }}>With Dr. Patel · in-network copay <strong style={{ color: PM.coralSoft }}>$25</strong></div>
         </div>
 
-        <PMButton onClick={() => goto('insurance')} variant="primary">Continue to insurance →</PMButton>
+        {(() => {
+          // Branch the post-booking flow on the adopter's current plan:
+          //   plus / comp  → skip insurance, jump to checkout
+          //   base         → show insurance with an upgrade upsell
+          //   none / null  → skip insurance, retention banner appears in checkout
+          const plan = window.__pmPlan;
+          const hasPremium = plan === 'plus' || plan === 'comp';
+          const hasBase    = plan === 'base';
+          const dest  = hasBase ? 'insurance' : 'checkout';
+          const label = hasPremium ? `Continue to checkout →` :
+                        hasBase    ? `Review insurance →` :
+                                     `Continue (no insurance) →`;
+          return (
+            <PMButton onClick={() => goto(dest)} variant="primary">{label}</PMButton>
+          );
+        })()}
       </div>
     </div>
   );
@@ -304,13 +319,17 @@ function VetDetailScreen({ goto, onBack, params }) {
 // ─── Insurance plans (Lemonade-inspired but ORIGINAL design) ───
 
 function InsuranceScreen({ goto, onBack, embedded = false }) {
+  const [enrolled, setEnrolled] = React.useState(window.__pmPlan || null); // null | 'base' | 'plus' | 'comp'
   const [plan, setPlan] = React.useState(window.__pmPlan || 'plus');
   const plans = [
     { id: 'base', name: 'Base',     price: 44.27, tag: null, items: { 'Diagnostics': true, 'Procedures': true, 'Medication': true, 'Vet visit fees': false, 'Dental illness': false, 'Behavioral': false } },
     { id: 'plus', name: 'Plus',     price: 67.74, tag: 'Popular', items: { 'Diagnostics': true, 'Procedures': true, 'Medication': true, 'Vet visit fees': true, 'Dental illness': true, 'Behavioral': true, 'Physical therapy': false, 'End-of-life': false } },
     { id: 'comp', name: 'Complete', price: 74.24, tag: null, items: { 'Everything in Plus': true, 'Physical therapy': true, 'End-of-life': true } },
   ];
-  const choose = (id) => { setPlan(id); window.__pmPlan = id; };
+  const choose = (id) => { setPlan(id); window.__pmPlan = id; setEnrolled(id); };
+  const cancelPlan = () => { window.__pmPlan = null; setEnrolled(null); };
+  const enrolledPlan = plans.find(p => p.id === enrolled);
+  const onBase = enrolled === 'base';
   const Outer = embedded ? React.Fragment : 'div';
   const outerProps = embedded ? {} : { style: { position: 'absolute', inset: 0, background: PM.cream, display: 'flex', flexDirection: 'column' } };
   return (
@@ -323,11 +342,73 @@ function InsuranceScreen({ goto, onBack, embedded = false }) {
           margin: '8px 0 6px', fontFamily: FONT_DISPLAY, fontSize: 32, fontWeight: 400,
           color: PM.night, letterSpacing: -0.6, lineHeight: 1.05,
         }}>
-          Pick a <em style={{ color: PM.coral }}>plan</em> that fits<br/>you and Poppy.
+          {enrolled
+            ? <>Your <em style={{ color: PM.coral }}>plan</em><br/>for Poppy.</>
+            : <>Pick a <em style={{ color: PM.coral }}>plan</em> that fits<br/>you and Poppy.</>}
         </h1>
-        <div style={{ fontFamily: FONT_BODY, fontSize: 12, color: PM.inkSoft, marginBottom: 20 }}>
+        <div style={{ fontFamily: FONT_BODY, fontSize: 12, color: PM.inkSoft, marginBottom: 16 }}>
           Prices for Poppy · Mixed · 2y · ZIP 97209
         </div>
+
+        {/* Enrolled banner — shows the active plan + cancel option */}
+        {enrolledPlan && (
+          <div style={{
+            padding: 14, borderRadius: 18, marginBottom: 14,
+            background: `${PM.mint}12`, borderLeft: `3px solid ${PM.mint}`,
+            display: 'flex', alignItems: 'center', gap: 12,
+          }}>
+            <div style={{
+              width: 40, height: 40, borderRadius: 20, background: PM.mint, color: '#FFF',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            }}>
+              <svg width="18" height="18" viewBox="0 0 18 18"><path d="M3 9 L 7.5 13 L 15 5" stroke="#FFF" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none"/></svg>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: '#1E6B4D', letterSpacing: 1, textTransform: 'uppercase', fontWeight: 700 }}>● Active</div>
+              <div style={{ fontFamily: FONT_BODY, fontSize: 14, color: PM.night, fontWeight: 700 }}>
+                Lemonade {enrolledPlan.name} · ${enrolledPlan.price}/mo
+              </div>
+            </div>
+            <button onClick={cancelPlan} style={{
+              padding: '6px 12px', borderRadius: 13,
+              background: 'transparent', color: PM.inkSoft, border: `1px solid ${PM.line}`,
+              cursor: 'pointer', fontFamily: FONT_BODY, fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap',
+            }}>Cancel plan</button>
+          </div>
+        )}
+
+        {/* Upgrade upsell — only shows when adopter is currently on Base */}
+        {onBase && (
+          <div style={{
+            padding: 14, borderRadius: 18, marginBottom: 14,
+            background: `linear-gradient(135deg, ${PM.coralSoft} 0%, #FFE4F0 100%)`,
+            border: `1.5px solid ${PM.coral}`,
+          }}>
+            <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: PM.coral, letterSpacing: 1.2, textTransform: 'uppercase', fontWeight: 700, marginBottom: 4 }}>
+              ✦ Worth a look
+            </div>
+            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 20, color: PM.night, letterSpacing: -0.3, lineHeight: 1.15, marginBottom: 6 }}>
+              Upgrade to <em style={{ color: PM.coral }}>Plus</em> for $23/mo more.
+            </div>
+            <div style={{ fontFamily: FONT_BODY, fontSize: 12, color: PM.inkSoft, lineHeight: 1.5 }}>
+              Adds <strong style={{ color: PM.night }}>vet visit fees</strong>, dental illness,
+              and behavioral. Today's wellness visit would have been covered.
+            </div>
+          </div>
+        )}
+
+        {/* No-plan retention nudge */}
+        {!enrolled && (
+          <div style={{
+            padding: 14, borderRadius: 18, marginBottom: 14,
+            background: `${PM.gold}1F`, borderLeft: `3px solid ${PM.gold}`,
+            fontFamily: FONT_BODY, fontSize: 12, color: PM.ink, lineHeight: 1.5,
+          }}>
+            <strong style={{ color: PM.night }}>You're not enrolled yet.</strong> Adopters with
+            Lemonade Plus saved an average of <strong style={{ color: PM.coral }}>$420 / year</strong> on
+            wellness visits.
+          </div>
+        )}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {plans.map(p => (
@@ -390,6 +471,12 @@ function PlanCard({ id, name, price, tag, items, selected, onClick }) {
 }
 
 // ─── Pet care wrapper · 3 sub-tabs (Insurance / Find a vet / Claims) ─
+
+// Sarah Chen's demo persona starts already enrolled in Lemonade Plus — the
+// VetDetail "Continue" button reads this to branch between the three flows.
+if (typeof window.__pmPlan === 'undefined') {
+  window.__pmPlan = 'plus';
+}
 
 // Mock claims copied from the vet side, filtered to Sarah Chen's view.
 // Poppy's claim has been pushed straight to the Payout / Approved stage so
@@ -850,20 +937,25 @@ function InsuranceWelcomeScreen({ onContinue }) {
 // ─── Checkout ──────────────────────────────────────────────
 
 function CheckoutScreen({ onBack, goto }) {
-  const planId = window.__pmPlan || 'plus';
-  const planMeta = {
-    base: { name: 'Base',     coverage: 90,  monthly: 44.27 },
-    plus: { name: 'Plus',     coverage: 150, monthly: 67.74 },
-    comp: { name: 'Complete', coverage: 170, monthly: 74.24 },
-  }[planId];
+  const planId = window.__pmPlan;          // may be null when user skipped
+  const noPlan = !planId;
+  const planMeta = noPlan
+    ? { name: 'No plan', coverage: 0,   monthly: 0     }
+    : {
+        base: { name: 'Base',     coverage: 160, monthly: 44.27 },
+        plus: { name: 'Plus',     coverage: 240, monthly: 67.74 },
+        comp: { name: 'Complete', coverage: 250, monthly: 74.24 },
+      }[planId];
   // Adoption pet — defaults to Poppy (the demo pet) but pulls live data from FEED
   const feed = (typeof FEED !== 'undefined' && FEED) || [];
   const adoptionPet = feed.find(p => p.key === (window.__pmAdoptionPet || 'poppy')) ||
                       feed[0] || { name: 'Poppy', shelter: 'Willow Creek', fee: 250 };
   const items = [
-    { label: 'Wellness exam',      amt: 95 },
-    { label: 'New-patient intake', amt: 35 },
-    { label: 'DHPP booster',       amt: 45 },
+    { label: 'Wellness exam',         amt: 95 },
+    { label: 'New-patient intake',    amt: 35 },
+    { label: 'DHPP booster',          amt: 45 },
+    { label: 'Bordetella intranasal', amt: 30 },
+    { label: '4Dx parasite screen',   amt: 60 },
   ];
   const subtotal = items.reduce((a, b) => a + b.amt, 0);
   const copay = (subtotal - planMeta.coverage).toFixed(2);
@@ -875,8 +967,39 @@ function CheckoutScreen({ onBack, goto }) {
           Confirm & <em style={{ color: PM.coral }}>pay</em>.
         </h1>
         <div style={{ fontFamily: FONT_BODY, fontSize: 13, color: PM.inkSoft, marginBottom: 18 }}>
-          Your card won't be charged until after the visit. <strong style={{ color: PM.coral }}>{planMeta.name} plan</strong> · ${planMeta.monthly}/mo
+          Your card won't be charged until after the visit.
+          {noPlan
+            ? <> <strong style={{ color: PM.coral }}>No insurance on file.</strong></>
+            : <> <strong style={{ color: PM.coral }}>{planMeta.name} plan</strong> · ${planMeta.monthly}/mo</>
+          }
         </div>
+
+        {/* Retention banner — last-chance pitch when the adopter has no plan */}
+        {noPlan && (
+          <div style={{
+            padding: 16, borderRadius: 22, marginBottom: 12,
+            background: `linear-gradient(135deg, ${PM.coralSoft} 0%, #FFE4F0 100%)`,
+            border: `1.5px solid ${PM.coral}`,
+            position: 'relative',
+          }}>
+            <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: PM.coral, letterSpacing: 1.4, textTransform: 'uppercase', fontWeight: 700, marginBottom: 4 }}>
+              ✦ Wait — quick math
+            </div>
+            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 22, color: PM.night, letterSpacing: -0.4, lineHeight: 1.15 }}>
+              You'd pay <em style={{ color: PM.coral }}>$240 more</em> today<br/>without coverage.
+            </div>
+            <div style={{ marginTop: 6, fontFamily: FONT_BODY, fontSize: 12, color: PM.inkSoft, lineHeight: 1.5 }}>
+              Lemonade Plus is <strong style={{ color: PM.night }}>$67.74/mo</strong> · average adopter
+              saves <strong style={{ color: PM.night }}>$420/year</strong>. Add it now and today's visit is covered.
+            </div>
+            <button onClick={() => goto('insurance')} style={{
+              marginTop: 12, padding: '10px 16px', borderRadius: 22,
+              background: PM.coral, color: '#FFF', border: 'none', cursor: 'pointer',
+              fontFamily: FONT_BODY, fontSize: 13, fontWeight: 600,
+              boxShadow: '0 6px 16px rgba(255,0,131,0.34)',
+            }}>Add coverage now →</button>
+          </div>
+        )}
 
         <div style={{ padding: 18, borderRadius: 22, background: PM.white, marginBottom: 12 }}>
           <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: PM.violet, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 4 }}>Appointment</div>
@@ -916,17 +1039,21 @@ function CheckoutScreen({ onBack, goto }) {
               <span style={{ fontFamily: FONT_MONO, fontSize: 13, color: PM.ink }}>${it.amt.toFixed(2)}</span>
             </div>
           ))}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', borderTop: `1px dashed ${PM.line}`, marginTop: 6 }}>
-            <span style={{ fontFamily: FONT_BODY, fontSize: 13, color: PM.coral, fontWeight: 600 }}>Lemonade {planMeta.name} coverage</span>
-            <span style={{ fontFamily: FONT_MONO, fontSize: 13, color: PM.coral, fontWeight: 600 }}>−${planMeta.coverage.toFixed(2)}</span>
-          </div>
+          {!noPlan && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', borderTop: `1px dashed ${PM.line}`, marginTop: 6 }}>
+              <span style={{ fontFamily: FONT_BODY, fontSize: 13, color: PM.coral, fontWeight: 600 }}>Lemonade {planMeta.name} coverage</span>
+              <span style={{ fontFamily: FONT_MONO, fontSize: 13, color: PM.coral, fontWeight: 600 }}>−${planMeta.coverage.toFixed(2)}</span>
+            </div>
+          )}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 0 4px', borderTop: `1.5px solid ${PM.night}`, marginTop: 10 }}>
-            <span style={{ fontFamily: FONT_DISPLAY, fontSize: 22, color: PM.night }}>Copay at visit</span>
-            <span style={{ fontFamily: FONT_DISPLAY, fontSize: 28, color: PM.coral, fontStyle: 'italic' }}>${copay}</span>
+            <span style={{ fontFamily: FONT_DISPLAY, fontSize: 22, color: PM.night }}>{noPlan ? 'Due at visit' : 'Copay at visit'}</span>
+            <span style={{ fontFamily: FONT_DISPLAY, fontSize: 28, color: PM.coral, fontStyle: 'italic' }}>${noPlan ? subtotal.toFixed(2) : copay}</span>
           </div>
         </div>
 
-        <PMButton variant="primary" onClick={() => goto('insuranceWelcome')}>Confirm · ${copay}</PMButton>
+        <PMButton variant="primary" onClick={() => goto('insuranceWelcome')}>
+          Confirm · ${noPlan ? subtotal.toFixed(2) : copay}
+        </PMButton>
       </div>
     </div>
   );
