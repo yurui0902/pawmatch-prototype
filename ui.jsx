@@ -153,6 +153,11 @@ function TabBar({ active, onChange }) {
     { id: 'petCare', label: 'Pet care', icon: 'cross' },
     { id: 'me',      label: 'Me',       icon: 'me' },
   ];
+
+  // Cross-end demo: subscribe to the shared demo state so Chat shows an
+  // unread dot the moment the shelter side hits Message.
+  const demoState = (typeof useDemoState === 'function') ? useDemoState() : null;
+  const chatUnread = !!(demoState && demoState.shelterMessaged);
   const Icon = ({ name, on }) => {
     const c = on ? PM.night : PM.inkFaint;
     const sw = 1.8;
@@ -201,21 +206,34 @@ function TabBar({ active, onChange }) {
       display: 'flex', justifyContent: 'space-around', alignItems: 'flex-start',
       zIndex: 30,
     }}>
-      {tabs.map(t => (
-        <button key={t.id} onClick={() => onChange(t.id)} style={{
-          background: 'none', border: 'none', cursor: 'pointer',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-          padding: '4px 8px',
-        }}>
-          <Icon name={t.icon} on={active === t.id}/>
-          <span style={{
-            fontFamily: FONT_BODY, fontSize: 10,
-            color: active === t.id ? PM.night : PM.inkFaint,
-            fontWeight: active === t.id ? 600 : 500,
-            letterSpacing: 0.2,
-          }}>{t.label}</span>
-        </button>
-      ))}
+      {tabs.map(t => {
+        const showUnread = t.id === 'chat' && chatUnread;
+        return (
+          <button key={t.id} onClick={() => onChange(t.id)} style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+            padding: '4px 8px', position: 'relative',
+          }}>
+            <div style={{ position: 'relative' }}>
+              <Icon name={t.icon} on={active === t.id}/>
+              {showUnread && (
+                <span style={{
+                  position: 'absolute', top: -2, right: -4,
+                  width: 9, height: 9, borderRadius: 5,
+                  background: PM.coral,
+                  boxShadow: `0 0 0 2px ${PM.paper}`,
+                }}/>
+              )}
+            </div>
+            <span style={{
+              fontFamily: FONT_BODY, fontSize: 10,
+              color: active === t.id ? PM.night : PM.inkFaint,
+              fontWeight: active === t.id ? 600 : 500,
+              letterSpacing: 0.2,
+            }}>{t.label}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }

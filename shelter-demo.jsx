@@ -1,100 +1,176 @@
 // shelter-demo.jsx — cross-end presentation demo.
 //
-// Hosted in the adopter HTML. Defines:
-//   • a tiny event-bus + hook for toggling the shelter peek state
-//   • ShelterDemoToggle  — pill button that lives in the Matches header
-//   • ShelterDemoView    — mini-app that renders only the shelter Forms /
-//     Application Review screens (no splash / login / tab bar)
-// The Stage component in PawMatch.html watches the bus and decides whether
-// to render one iOS device frame or two side-by-side.
+// Replaces the old standalone toggle.  The demo is now driven by what the
+// user does inside the apps:
+//   1. Submit Poppy on adopter Matches  → shelter view slides in,
+//                                          Sarah Chen's pre-app appears
+//   2. Tap Sarah on shelter side        → shelter right phone shows
+//                                          her Application Review
+//   3. Tap Message in Application Review → shelter side opens chat with
+//                                          Sarah; adopter Chat tab shows
+//                                          unread; Poppy row shows
+//                                          "Shelter replied"
+//   4. Tap Reset demo in Matches header → everything snaps back.
+//
+// All state lives on `window.__pmDemoState`; subscribe with useDemoState().
 
-// ─── Event bus ────────────────────────────────────────────
-window.__pmShelterDemo = !!window.__pmShelterDemo;
-window.__pmToggleShelterDemo = function () {
-  window.__pmShelterDemo = !window.__pmShelterDemo;
-  window.dispatchEvent(new CustomEvent('pm-shelter-demo-changed', {
-    detail: { on: window.__pmShelterDemo },
-  }));
-};
+// ─── State bus ────────────────────────────────────────────
 
-function useShelterDemo() {
-  const [on, setOn] = React.useState(!!window.__pmShelterDemo);
-  React.useEffect(() => {
-    const handler = (e) => setOn(!!(e && e.detail ? e.detail.on : window.__pmShelterDemo));
-    window.addEventListener('pm-shelter-demo-changed', handler);
-    return () => window.removeEventListener('pm-shelter-demo-changed', handler);
-  }, []);
-  return on;
+if (!window.__pmDemoState) {
+  window.__pmDemoState = {
+    shelterVisible:  false,
+    sarahSubmitted:  false,
+    shelterMessaged: false,
+    sarahJustArrived: false,   // transient — drives the slide-in animation
+  };
 }
 
-// ─── Toggle button (lives in Matches header right slot) ───
+function pmBroadcastDemo() {
+  window.dispatchEvent(new CustomEvent('pm-demo-state-changed', {
+    detail: { ...window.__pmDemoState },
+  }));
+}
 
-function ShelterDemoToggle() {
-  const on = useShelterDemo();
+window.__pmDemoActions = {
+  submitPoppy() {
+    window.__pmDemoState.shelterVisible = true;
+    window.__pmDemoState.sarahSubmitted = true;
+    window.__pmDemoState.sarahJustArrived = true;
+    pmBroadcastDemo();
+    // Clear the "just arrived" flag after the highlight animation finishes
+    // so re-renders don't keep firing it.
+    setTimeout(() => {
+      window.__pmDemoState.sarahJustArrived = false;
+      pmBroadcastDemo();
+    }, 3000);
+  },
+  shelterMessages() {
+    window.__pmDemoState.shelterMessaged = true;
+    pmBroadcastDemo();
+  },
+  reset() {
+    window.__pmDemoState = {
+      shelterVisible:  false,
+      sarahSubmitted:  false,
+      shelterMessaged: false,
+      sarahJustArrived: false,
+    };
+    pmBroadcastDemo();
+  },
+};
+
+function useDemoState() {
+  const [s, setS] = React.useState({ ...window.__pmDemoState });
+  React.useEffect(() => {
+    const h = () => setS({ ...window.__pmDemoState });
+    window.addEventListener('pm-demo-state-changed', h);
+    return () => window.removeEventListener('pm-demo-state-changed', h);
+  }, []);
+  return s;
+}
+
+// ─── Reset button (used by Matches TopBar) ────────────────
+
+function ResetDemoButton() {
+  const s = useDemoState();
+  const showing = s.shelterVisible || s.sarahSubmitted || s.shelterMessaged;
+  if (!showing) return null;
   return (
-    <button onClick={() => window.__pmToggleShelterDemo()} style={{
+    <button onClick={() => window.__pmDemoActions.reset()} style={{
       height: 36, padding: '0 12px', borderRadius: 18,
-      background: on ? '#FFF' : PM.violet,
-      color:      on ? PM.violet : '#FFF',
-      border:     on ? `1.5px solid ${PM.violet}` : 'none',
-      cursor: 'pointer',
+      background: '#FFF', color: PM.violet,
+      border: `1.5px solid ${PM.violet}`, cursor: 'pointer',
       display: 'flex', alignItems: 'center', gap: 6,
       fontFamily: FONT_BODY, fontSize: 11, fontWeight: 700, letterSpacing: 0.3,
-      boxShadow: on ? 'none' : '0 4px 12px rgba(0,52,255,0.30)',
-      transition: 'all 0.18s',
       whiteSpace: 'nowrap',
     }}>
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-        <rect x="0.5" y="1.5" width="5" height="11" rx="1" stroke="currentColor" strokeWidth="1.4" fill="none"/>
-        <rect x="8.5" y="1.5" width="5" height="11" rx="1" stroke="currentColor" strokeWidth="1.4" fill="none"/>
-        <path d="M6 7 L 8 7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+        <path d="M3 7 Q 3 2.5, 7 2.5 Q 11 2.5, 11 7 Q 11 11.5, 7 11.5"
+              stroke="currentColor" strokeWidth="1.6" fill="none" strokeLinecap="round"/>
+        <path d="M3 7 L 1 5 M 3 7 L 5 5"
+              stroke="currentColor" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
-      {on ? 'Hide shelter' : 'Show shelter view'}
+      Reset demo
     </button>
   );
 }
 
-// ─── Demo phone (right side) ──────────────────────────────
+// ─── Right-phone demo view ────────────────────────────────
 
 function ShelterDemoView() {
-  // Local route stack — starts on Forms with Pre-app focused on Sarah Chen.
+  const s = useDemoState();
   const [stack, setStack] = React.useState([{ name: 'forms', params: {} }]);
   const current = stack[stack.length - 1];
 
-  const goto = (name, params = {}) => setStack(s => [...s, { name, params }]);
-  const back = () => setStack(s => s.length > 1 ? s.slice(0, -1) : s);
-  const noop = () => {};
+  // When Sarah is unsubmitted, present a filtered application list that hides
+  // her record so the Pre-app segment looks "empty (waiting)".
+  const applicationsForDemo = React.useMemo(() => {
+    if (s.sarahSubmitted) {
+      // Reorder: put Sarah at the very top so she's visible immediately
+      const sarah = (APPLICATIONS || []).filter(a => a.applicant === 'Sarah Chen');
+      const rest  = (APPLICATIONS || []).filter(a => a.applicant !== 'Sarah Chen');
+      return [...sarah, ...rest];
+    }
+    return (APPLICATIONS || []).filter(a => a.applicant !== 'Sarah Chen');
+  }, [s.sarahSubmitted]);
+
+  const goto = (name, params = {}) => setStack(st => [...st, { name, params }]);
+  const back = () => setStack(st => st.length > 1 ? st.slice(0, -1) : st);
+
+  // When the shelter clicks Message inside Application Review we want to:
+  //   (a) navigate the right phone into the chat thread
+  //   (b) fire the global event so the adopter chat tab shows unread
+  const goFromReview = (name, params) => {
+    if (name === 'chatThread') {
+      window.__pmDemoActions.shelterMessages();
+    }
+    goto(name, params);
+  };
 
   let screen;
   switch (current.name) {
     case 'forms':
       screen = (
         <ShelterFormsScreen
-          goto={goto} tab="forms" setTab={noop}
+          goto={goto} tab="forms" setTab={() => {}}
           initialSeg="pre-app" hideTabBar
+          apps={applicationsForDemo}
+          highlightApplicant={s.sarahJustArrived ? 'Sarah Chen' : null}
         />
       );
       break;
     case 'appReview': {
-      const app = (APPLICATIONS || []).find(a => a.id === current.params?.id) || APPLICATIONS[0];
+      const app = applicationsForDemo.find(a => a.id === current.params?.id)
+        || (APPLICATIONS || []).find(a => a.id === current.params?.id)
+        || APPLICATIONS[0];
       screen = (
         <ShelterAppReviewScreen
           app={app}
           onBack={back}
-          goto={(n, p) => p ? goto(n, p) : goto(n)}
-          setTab={noop}
+          goto={goFromReview}
+          setTab={() => {}}
         />
       );
+      break;
+    }
+    case 'chatThread': {
+      // Pull a conversation row matching the pet; fall back to Sarah Chen.
+      const petKey = current.params?.pet || 'poppy';
+      let conv = (window.SHELTER_CHATS || []).find(c => c.petKey === petKey);
+      if (!conv) {
+        conv = { who: 'Sarah Chen', sub: 'About Poppy', petKey, preview: '', age: 'now', unread: 0 };
+      }
+      screen = <ShelterChatThreadScreen conv={conv} onBack={back}/>;
       break;
     }
     default:
       screen = (
         <div style={{ padding: 40, fontFamily: FONT_BODY }}>
-          Demo route not found: {current.name}
+          Unknown demo route: {current.name}
         </div>
       );
   }
   return screen;
 }
 
-Object.assign(window, { useShelterDemo, ShelterDemoToggle, ShelterDemoView });
+Object.assign(window, { useDemoState, ResetDemoButton, ShelterDemoView });

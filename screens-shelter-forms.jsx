@@ -4,13 +4,14 @@ function stageMeta(key) {
   return APP_STAGES.find(s => s.key === key) || APP_STAGES[0];
 }
 
-function ShelterFormsScreen({ goto, tab, setTab, initialSeg, hideTabBar }) {
+function ShelterFormsScreen({ goto, tab, setTab, initialSeg, hideTabBar, apps, highlightApplicant }) {
+  const data = apps || APPLICATIONS;
   const [seg, setSeg] = React.useState(initialSeg || 'all');
-  const segments = [['all', `All ${APPLICATIONS.length}`], ...APP_STAGES.map(s => {
-    const n = APPLICATIONS.filter(a => a.stage === s.key).length;
+  const segments = [['all', `All ${data.length}`], ...APP_STAGES.map(s => {
+    const n = data.filter(a => a.stage === s.key).length;
     return [s.key, `${s.label} · ${n}`];
   })];
-  const list = seg === 'all' ? APPLICATIONS : APPLICATIONS.filter(a => a.stage === seg);
+  const list = seg === 'all' ? data : data.filter(a => a.stage === seg);
 
   return (
     <div style={{ position: 'absolute', inset: 0, background: PM.cream, display: 'flex', flexDirection: 'column' }}>
@@ -40,7 +41,13 @@ function ShelterFormsScreen({ goto, tab, setTab, initialSeg, hideTabBar }) {
           />
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {list.map(a => <ApplicantRow key={a.id} app={a} onClick={() => goto('appReview', { id: a.id })}/>)}
+            {list.map(a => (
+              <ApplicantRow
+                key={a.id} app={a}
+                highlight={highlightApplicant === a.applicant}
+                onClick={() => goto('appReview', { id: a.id })}
+              />
+            ))}
           </div>
         )}
       </div>
@@ -50,15 +57,42 @@ function ShelterFormsScreen({ goto, tab, setTab, initialSeg, hideTabBar }) {
   );
 }
 
-function ApplicantRow({ app, onClick }) {
+function ApplicantRow({ app, onClick, highlight }) {
   const sm = stageMeta(app.stage);
   const pet = SHELTER_PETS.find(p => p.key === app.petKey);
   return (
-    <button onClick={onClick} style={{
+    <button onClick={onClick} className={highlight ? 'pm-applicant-new' : ''} style={{
+      position: 'relative',
       display: 'flex', alignItems: 'center', gap: 14, padding: 14, borderRadius: 22,
       background: PM.white, border: 'none', cursor: 'pointer', textAlign: 'left',
-      boxShadow: '0 1px 2px rgba(20,20,40,0.03), 0 6px 18px rgba(20,20,40,0.04)',
+      boxShadow: highlight
+        ? `0 0 0 2px ${PM.coral}, 0 1px 2px rgba(20,20,40,0.03), 0 12px 30px rgba(255,0,131,0.22)`
+        : '0 1px 2px rgba(20,20,40,0.03), 0 6px 18px rgba(20,20,40,0.04)',
+      transition: 'box-shadow 0.3s ease',
     }}>
+      {highlight && (
+        <>
+          <style>{`
+            @keyframes pm-applicant-slide-in {
+              0%   { transform: translateY(-22px); opacity: 0; }
+              60%  { transform: translateY(2px);   opacity: 1; }
+              100% { transform: translateY(0);     opacity: 1; }
+            }
+            @keyframes pm-new-pulse {
+              0%, 100% { transform: scale(1);    box-shadow: 0 4px 10px rgba(255,0,131,0.3); }
+              50%      { transform: scale(1.06); box-shadow: 0 6px 14px rgba(255,0,131,0.45); }
+            }
+            .pm-applicant-new { animation: pm-applicant-slide-in 0.55s cubic-bezier(0.32, 1.4, 0.64, 1) both; }
+          `}</style>
+          <span style={{
+            position: 'absolute', top: -8, right: 12,
+            padding: '3px 9px', borderRadius: 9,
+            background: PM.coral, color: '#FFF',
+            fontFamily: FONT_MONO, fontSize: 9, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase',
+            animation: 'pm-new-pulse 1.4s ease-in-out infinite',
+          }}>● New</span>
+        </>
+      )}
       <div style={{
         width: 52, height: 52, borderRadius: 26,
         background: sm.color, color: '#FFF',
@@ -68,7 +102,7 @@ function ApplicantRow({ app, onClick }) {
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
           <div style={{ fontFamily: FONT_DISPLAY, fontSize: 19, color: PM.night, letterSpacing: -0.2, lineHeight: 1.1 }}>{app.applicant}</div>
-          <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: PM.inkFaint, letterSpacing: 0.4 }}>{app.age}</div>
+          <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: PM.inkFaint, letterSpacing: 0.4 }}>{highlight ? 'just now' : app.age}</div>
         </div>
         <div style={{ marginTop: 4, fontFamily: FONT_BODY, fontSize: 12, color: PM.inkSoft }}>
           for <strong style={{ color: PM.night }}>{pet ? pet.name : app.petKey}</strong> · {app.household} · {app.location}

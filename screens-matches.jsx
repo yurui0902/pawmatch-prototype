@@ -29,7 +29,7 @@ function MatchesScreen({ goto, tab, setTab, matches: matchesProp }) {
       <TopBar
         title="Matches" large
         subtitle={`Your starred pets — ${counts.all} total`}
-        right={typeof ShelterDemoToggle === 'function' ? <ShelterDemoToggle/> : null}
+        right={typeof ResetDemoButton === 'function' ? <ResetDemoButton/> : null}
       />
       <div style={{ padding: '0 20px 8px' }}>
         <div style={{ display: 'flex', gap: 6, padding: 4, background: PM.white, borderRadius: 16, border: `1px solid ${PM.line}` }}>
@@ -89,12 +89,29 @@ function MatchRow({ petKey, met, total, status, age, onClick }) {
   const isReady = status === 'ready';
   const effective = (isReady && phase === 'done') ? 'submitted' : status;
 
+  // Cross-end demo: when shelter has messaged Sarah, the Poppy row shows
+  // "Shelter replied" instead of the regular awaiting copy.
+  const demoState = (typeof useDemoState === 'function') ? useDemoState() : null;
+  const shelterReplied = !!(demoState && demoState.shelterMessaged && petKey === 'poppy');
+
+  // Reset local Submit animation state when the demo is reset, so Poppy's
+  // row returns to its initial "Ready to submit" appearance on the next render.
+  React.useEffect(() => {
+    if (demoState && !demoState.sarahSubmitted && phase === 'done') {
+      setPhase('idle');
+    }
+  }, [demoState ? demoState.sarahSubmitted : null]);
+
+  const submittedTag = shelterReplied
+    ? '● Shelter replied · open conversation'
+    : (phase === 'done' ? 'Just submitted · awaiting' : `Submitted ${age} · awaiting`);
+  const submittedColor = shelterReplied ? PM.mint : PM.violet;
+
   const config = {
     incomplete: { tag: `${total - met} fields missing`, tagColor: PM.gold,   cta: 'Continue', variant: 'outline' },
     ready:      { tag: 'Ready to submit',               tagColor: PM.mint,   cta: 'Submit',   variant: 'dark'    },
-    submitted:  { tag: phase === 'done' ? 'Just submitted · awaiting'
-                                       : `Submitted ${age} · awaiting`,
-                                                        tagColor: PM.violet, cta: 'Chat',     variant: 'coral'   },
+    submitted:  { tag: submittedTag,                    tagColor: submittedColor,
+                                                                              cta: 'Chat',     variant: 'coral'   },
   }[effective];
 
   const handleClick = (e) => {
@@ -102,7 +119,13 @@ function MatchRow({ petKey, met, total, status, age, onClick }) {
     if (isReady && phase === 'idle') {
       e.preventDefault();
       setPhase('submitting');
-      setTimeout(() => setPhase('done'), 900);
+      setTimeout(() => {
+        setPhase('done');
+        // Demo trigger: only Poppy's submit drives the cross-end story.
+        if (petKey === 'poppy' && window.__pmDemoActions) {
+          window.__pmDemoActions.submitPoppy();
+        }
+      }, 900);
       return;
     }
     onClick();

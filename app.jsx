@@ -8,8 +8,8 @@ function App() {
   const [petTypes, setPetTypes] = React.useState(['both']);
   // user's matches — lifted so Profile can show a live count
   const [matches, setMatches] = React.useState([
-    { petKey: 'poppy',  met: 5, total: 6, status: 'incomplete', age: '2h' },
-    { petKey: 'miso',   met: 6, total: 6, status: 'ready',      age: '5h' },
+    { petKey: 'poppy',  met: 6, total: 6, status: 'ready',      age: '2h' },
+    { petKey: 'miso',   met: 5, total: 6, status: 'incomplete', age: '5h' },
     { petKey: 'clover', met: 5, total: 5, status: 'submitted',  age: '3d' },
     { petKey: 'olive',  met: 3, total: 6, status: 'incomplete', age: '4d' },
   ]);

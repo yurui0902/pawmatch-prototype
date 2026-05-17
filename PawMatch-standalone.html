@@ -883,6 +883,11 @@ function TabBar({ active, onChange }) {
     { id: 'petCare', label: 'Pet care', icon: 'cross' },
     { id: 'me',      label: 'Me',       icon: 'me' },
   ];
+
+  // Cross-end demo: subscribe to the shared demo state so Chat shows an
+  // unread dot the moment the shelter side hits Message.
+  const demoState = (typeof useDemoState === 'function') ? useDemoState() : null;
+  const chatUnread = !!(demoState && demoState.shelterMessaged);
   const Icon = ({ name, on }) => {
     const c = on ? PM.night : PM.inkFaint;
     const sw = 1.8;
@@ -931,21 +936,34 @@ function TabBar({ active, onChange }) {
       display: 'flex', justifyContent: 'space-around', alignItems: 'flex-start',
       zIndex: 30,
     }}>
-      {tabs.map(t => (
-        <button key={t.id} onClick={() => onChange(t.id)} style={{
-          background: 'none', border: 'none', cursor: 'pointer',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-          padding: '4px 8px',
-        }}>
-          <Icon name={t.icon} on={active === t.id}/>
-          <span style={{
-            fontFamily: FONT_BODY, fontSize: 10,
-            color: active === t.id ? PM.night : PM.inkFaint,
-            fontWeight: active === t.id ? 600 : 500,
-            letterSpacing: 0.2,
-          }}>{t.label}</span>
-        </button>
-      ))}
+      {tabs.map(t => {
+        const showUnread = t.id === 'chat' && chatUnread;
+        return (
+          <button key={t.id} onClick={() => onChange(t.id)} style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+            padding: '4px 8px', position: 'relative',
+          }}>
+            <div style={{ position: 'relative' }}>
+              <Icon name={t.icon} on={active === t.id}/>
+              {showUnread && (
+                <span style={{
+                  position: 'absolute', top: -2, right: -4,
+                  width: 9, height: 9, borderRadius: 5,
+                  background: PM.coral,
+                  boxShadow: `0 0 0 2px ${PM.paper}`,
+                }}/>
+              )}
+            </div>
+            <span style={{
+              fontFamily: FONT_BODY, fontSize: 10,
+              color: active === t.id ? PM.night : PM.inkFaint,
+              fontWeight: active === t.id ? 600 : 500,
+              letterSpacing: 0.2,
+            }}>{t.label}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -2841,7 +2859,7 @@ function MatchesScreen({ goto, tab, setTab, matches: matchesProp }) {
       <TopBar
         title="Matches" large
         subtitle={`Your starred pets — ${counts.all} total`}
-        right={typeof ShelterDemoToggle === 'function' ? <ShelterDemoToggle/> : null}
+        right={typeof ResetDemoButton === 'function' ? <ResetDemoButton/> : null}
       />
       <div style={{ padding: '0 20px 8px' }}>
         <div style={{ display: 'flex', gap: 6, padding: 4, background: PM.white, borderRadius: 16, border: `1px solid ${PM.line}` }}>
@@ -2901,12 +2919,29 @@ function MatchRow({ petKey, met, total, status, age, onClick }) {
   const isReady = status === 'ready';
   const effective = (isReady && phase === 'done') ? 'submitted' : status;
 
+  // Cross-end demo: when shelter has messaged Sarah, the Poppy row shows
+  // "Shelter replied" instead of the regular awaiting copy.
+  const demoState = (typeof useDemoState === 'function') ? useDemoState() : null;
+  const shelterReplied = !!(demoState && demoState.shelterMessaged && petKey === 'poppy');
+
+  // Reset local Submit animation state when the demo is reset, so Poppy's
+  // row returns to its initial "Ready to submit" appearance on the next render.
+  React.useEffect(() => {
+    if (demoState && !demoState.sarahSubmitted && phase === 'done') {
+      setPhase('idle');
+    }
+  }, [demoState ? demoState.sarahSubmitted : null]);
+
+  const submittedTag = shelterReplied
+    ? '● Shelter replied · open conversation'
+    : (phase === 'done' ? 'Just submitted · awaiting' : `Submitted ${age} · awaiting`);
+  const submittedColor = shelterReplied ? PM.mint : PM.violet;
+
   const config = {
     incomplete: { tag: `${total - met} fields missing`, tagColor: PM.gold,   cta: 'Continue', variant: 'outline' },
     ready:      { tag: 'Ready to submit',               tagColor: PM.mint,   cta: 'Submit',   variant: 'dark'    },
-    submitted:  { tag: phase === 'done' ? 'Just submitted · awaiting'
-                                       : `Submitted ${age} · awaiting`,
-                                                        tagColor: PM.violet, cta: 'Chat',     variant: 'coral'   },
+    submitted:  { tag: submittedTag,                    tagColor: submittedColor,
+                                                                              cta: 'Chat',     variant: 'coral'   },
   }[effective];
 
   const handleClick = (e) => {
@@ -2914,7 +2949,13 @@ function MatchRow({ petKey, met, total, status, age, onClick }) {
     if (isReady && phase === 'idle') {
       e.preventDefault();
       setPhase('submitting');
-      setTimeout(() => setPhase('done'), 900);
+      setTimeout(() => {
+        setPhase('done');
+        // Demo trigger: only Poppy's submit drives the cross-end story.
+        if (petKey === 'poppy' && window.__pmDemoActions) {
+          window.__pmDemoActions.submitPoppy();
+        }
+      }, 900);
       return;
     }
     onClick();
@@ -3666,6 +3707,13 @@ const ADOPTER_CLAIMS = [
     provider: 'Lemonade Pet · Plus', amount: 265.00, copay: 25.00, payout: 240.00,
     visit: 'Wed Apr 16, 2026 · Wellness · Forest Park Veterinary',
     submittedAge: 'Just now', status: 'Pending',
+    items: [
+      { label: 'Wellness exam · Dr. Patel',  charge: 95.00 },
+      { label: 'New-patient intake',          charge: 35.00 },
+      { label: 'DHPP booster · 1 ml SQ',      charge: 45.00 },
+      { label: 'Bordetella intranasal',       charge: 30.00 },
+      { label: 'Heartworm/parasite screen (4Dx)', charge: 60.00 },
+    ],
     timeline: [
       { label: 'Submitted by Dr. Patel', when: 'Just now',          done: true  },
       { label: 'Under review',           when: 'expected today',     done: false },
@@ -3765,6 +3813,7 @@ function PetCareScreen({ goto, tab, setTab }) {
 }
 
 function AdopterClaimsList({ claims }) {
+  const fee = useExtraFee();
   const badgeStyle = (status) => ({
     Draft:    { bg: '#FFF1D6', fg: '#9A6A00' },
     Pending:  { bg: '#D6E8FF', fg: '#0034FF' },
@@ -3780,37 +3829,84 @@ function AdopterClaimsList({ claims }) {
     );
   }
   return (
-    <div style={{ padding: '4px 20px 24px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+    <div style={{ padding: '4px 20px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: PM.inkSoft, letterSpacing: 0.8, textTransform: 'uppercase', margin: '4px 4px 2px' }}>
         Submitted by your vets
       </div>
       {claims.map(c => {
         const b = badgeStyle(c.status);
+        const owedNow = fee.paid ? 0 : c.copay;
         return (
           <div key={c.id} style={{
-            padding: 14, borderRadius: 18, background: PM.white,
+            padding: 16, borderRadius: 20, background: PM.white,
             boxShadow: '0 1px 2px rgba(20,20,40,0.03), 0 6px 18px rgba(20,20,40,0.04)',
           }}>
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-              <div style={{ fontFamily: FONT_BODY, fontSize: 14, fontWeight: 700, color: PM.night }}>
-                {c.petName} <span style={{ color: PM.inkFaint, fontWeight: 500 }}>· claim {c.id.split('-').slice(-1)[0]}</span>
+              <div style={{ fontFamily: FONT_DISPLAY, fontSize: 18, color: PM.night, letterSpacing: -0.3, lineHeight: 1.1 }}>
+                {c.petName}
+                <span style={{ marginLeft: 8, fontFamily: FONT_MONO, fontSize: 11, color: PM.inkFaint, fontStyle: 'normal', fontWeight: 400, letterSpacing: 0.4 }}>{c.id}</span>
               </div>
-              <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: PM.inkFaint, letterSpacing: 0.4 }}>{c.submittedAge}</div>
-            </div>
-            <div style={{ marginTop: 4, fontFamily: FONT_BODY, fontSize: 12, color: PM.inkSoft }}>{c.visit}</div>
-            <div style={{ marginTop: 6, fontFamily: FONT_BODY, fontSize: 12, color: PM.inkSoft }}>{c.provider}</div>
-            <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               <span style={{
-                padding: '3px 8px', borderRadius: 8,
-                background: b.bg, color: b.fg,
+                padding: '3px 8px', borderRadius: 8, background: b.bg, color: b.fg,
                 fontFamily: FONT_MONO, fontSize: 10, letterSpacing: 0.4, textTransform: 'uppercase', fontWeight: 700,
               }}>{c.status}</span>
-              <span style={{ fontFamily: FONT_MONO, fontSize: 11, color: PM.ink, fontWeight: 700, marginLeft: 'auto' }}>
-                Billed ${c.amount.toFixed(2)} · Lemonade pays ${c.payout.toFixed(2)}
-              </span>
             </div>
+            <div style={{ marginTop: 4, fontFamily: FONT_BODY, fontSize: 12, color: PM.inkSoft }}>{c.visit}</div>
+            <div style={{ marginTop: 2, fontFamily: FONT_BODY, fontSize: 12, color: PM.inkSoft }}>{c.provider} · submitted {c.submittedAge}</div>
+
+            {/* Itemized line items */}
+            {c.items && c.items.length > 0 && (
+              <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${PM.lineSoft}` }}>
+                <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: PM.inkSoft, letterSpacing: 0.8, textTransform: 'uppercase', fontWeight: 600, marginBottom: 8 }}>
+                  Itemized charges
+                </div>
+                {c.items.map((it, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0' }}>
+                    <span style={{ fontFamily: FONT_BODY, fontSize: 13, color: PM.ink }}>{it.label}</span>
+                    <span style={{ fontFamily: FONT_MONO, fontSize: 13, color: PM.ink, fontWeight: 600 }}>${it.charge.toFixed(2)}</span>
+                  </div>
+                ))}
+                <div style={{ marginTop: 6, paddingTop: 6, borderTop: `1px dashed ${PM.line}`, display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ fontFamily: FONT_BODY, fontSize: 13, color: PM.ink, fontWeight: 600 }}>Subtotal</span>
+                  <span style={{ fontFamily: FONT_MONO, fontSize: 13, color: PM.ink, fontWeight: 700 }}>${c.amount.toFixed(2)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
+                  <span style={{ fontFamily: FONT_BODY, fontSize: 13, color: PM.coral, fontWeight: 600 }}>{c.provider.split('·')[0].trim()} coverage</span>
+                  <span style={{ fontFamily: FONT_MONO, fontSize: 13, color: PM.coral, fontWeight: 700 }}>−${c.payout.toFixed(2)}</span>
+                </div>
+                <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1.5px solid ${PM.night}`,
+                              display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                  <span style={{ fontFamily: FONT_DISPLAY, fontSize: 16, color: PM.night }}>You owe</span>
+                  {owedNow > 0 ? (
+                    <span style={{ fontFamily: FONT_DISPLAY, fontSize: 22, color: PM.coral, fontStyle: 'italic' }}>${c.copay.toFixed(2)}</span>
+                  ) : (
+                    <span style={{
+                      padding: '4px 10px', borderRadius: 12,
+                      background: '#E6F8EF', color: '#1E8A5A',
+                      fontFamily: FONT_MONO, fontSize: 11, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase',
+                    }}>Paid ✓</span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Pay-now lives directly on the card so users can act without
+                opening the bell drawer. Hidden once the copay is settled. */}
+            {owedNow > 0 && (
+              <button onClick={fee.markPaid} style={{
+                marginTop: 12, width: '100%', height: 44, borderRadius: 22,
+                background: PM.coral, color: '#FFF', border: 'none', cursor: 'pointer',
+                fontFamily: FONT_BODY, fontSize: 13, fontWeight: 600,
+                boxShadow: '0 4px 12px rgba(255,0,131,0.32)',
+              }}>Pay ${c.copay.toFixed(2)} now</button>
+            )}
+
+            {/* Status timeline */}
             {c.timeline && (
-              <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${PM.lineSoft}` }}>
+              <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${PM.lineSoft}` }}>
+                <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: PM.inkSoft, letterSpacing: 0.8, textTransform: 'uppercase', fontWeight: 600, marginBottom: 6 }}>
+                  Status
+                </div>
                 {c.timeline.map((s, i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px 0' }}>
                     <span style={{
@@ -4522,8 +4618,8 @@ function App() {
   const [petTypes, setPetTypes] = React.useState(['both']);
   // user's matches — lifted so Profile can show a live count
   const [matches, setMatches] = React.useState([
-    { petKey: 'poppy',  met: 5, total: 6, status: 'incomplete', age: '2h' },
-    { petKey: 'miso',   met: 6, total: 6, status: 'ready',      age: '5h' },
+    { petKey: 'poppy',  met: 6, total: 6, status: 'ready',      age: '2h' },
+    { petKey: 'miso',   met: 5, total: 6, status: 'incomplete', age: '5h' },
     { petKey: 'clover', met: 5, total: 5, status: 'submitted',  age: '3d' },
     { petKey: 'olive',  met: 3, total: 6, status: 'incomplete', age: '4d' },
   ]);
@@ -4905,13 +5001,14 @@ function stageMeta(key) {
   return APP_STAGES.find(s => s.key === key) || APP_STAGES[0];
 }
 
-function ShelterFormsScreen({ goto, tab, setTab, initialSeg, hideTabBar }) {
+function ShelterFormsScreen({ goto, tab, setTab, initialSeg, hideTabBar, apps, highlightApplicant }) {
+  const data = apps || APPLICATIONS;
   const [seg, setSeg] = React.useState(initialSeg || 'all');
-  const segments = [['all', `All ${APPLICATIONS.length}`], ...APP_STAGES.map(s => {
-    const n = APPLICATIONS.filter(a => a.stage === s.key).length;
+  const segments = [['all', `All ${data.length}`], ...APP_STAGES.map(s => {
+    const n = data.filter(a => a.stage === s.key).length;
     return [s.key, `${s.label} · ${n}`];
   })];
-  const list = seg === 'all' ? APPLICATIONS : APPLICATIONS.filter(a => a.stage === seg);
+  const list = seg === 'all' ? data : data.filter(a => a.stage === seg);
 
   return (
     <div style={{ position: 'absolute', inset: 0, background: PM.cream, display: 'flex', flexDirection: 'column' }}>
@@ -4941,7 +5038,13 @@ function ShelterFormsScreen({ goto, tab, setTab, initialSeg, hideTabBar }) {
           />
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {list.map(a => <ApplicantRow key={a.id} app={a} onClick={() => goto('appReview', { id: a.id })}/>)}
+            {list.map(a => (
+              <ApplicantRow
+                key={a.id} app={a}
+                highlight={highlightApplicant === a.applicant}
+                onClick={() => goto('appReview', { id: a.id })}
+              />
+            ))}
           </div>
         )}
       </div>
@@ -4951,15 +5054,42 @@ function ShelterFormsScreen({ goto, tab, setTab, initialSeg, hideTabBar }) {
   );
 }
 
-function ApplicantRow({ app, onClick }) {
+function ApplicantRow({ app, onClick, highlight }) {
   const sm = stageMeta(app.stage);
   const pet = SHELTER_PETS.find(p => p.key === app.petKey);
   return (
-    <button onClick={onClick} style={{
+    <button onClick={onClick} className={highlight ? 'pm-applicant-new' : ''} style={{
+      position: 'relative',
       display: 'flex', alignItems: 'center', gap: 14, padding: 14, borderRadius: 22,
       background: PM.white, border: 'none', cursor: 'pointer', textAlign: 'left',
-      boxShadow: '0 1px 2px rgba(20,20,40,0.03), 0 6px 18px rgba(20,20,40,0.04)',
+      boxShadow: highlight
+        ? `0 0 0 2px ${PM.coral}, 0 1px 2px rgba(20,20,40,0.03), 0 12px 30px rgba(255,0,131,0.22)`
+        : '0 1px 2px rgba(20,20,40,0.03), 0 6px 18px rgba(20,20,40,0.04)',
+      transition: 'box-shadow 0.3s ease',
     }}>
+      {highlight && (
+        <>
+          <style>{`
+            @keyframes pm-applicant-slide-in {
+              0%   { transform: translateY(-22px); opacity: 0; }
+              60%  { transform: translateY(2px);   opacity: 1; }
+              100% { transform: translateY(0);     opacity: 1; }
+            }
+            @keyframes pm-new-pulse {
+              0%, 100% { transform: scale(1);    box-shadow: 0 4px 10px rgba(255,0,131,0.3); }
+              50%      { transform: scale(1.06); box-shadow: 0 6px 14px rgba(255,0,131,0.45); }
+            }
+            .pm-applicant-new { animation: pm-applicant-slide-in 0.55s cubic-bezier(0.32, 1.4, 0.64, 1) both; }
+          `}</style>
+          <span style={{
+            position: 'absolute', top: -8, right: 12,
+            padding: '3px 9px', borderRadius: 9,
+            background: PM.coral, color: '#FFF',
+            fontFamily: FONT_MONO, fontSize: 9, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase',
+            animation: 'pm-new-pulse 1.4s ease-in-out infinite',
+          }}>● New</span>
+        </>
+      )}
       <div style={{
         width: 52, height: 52, borderRadius: 26,
         background: sm.color, color: '#FFF',
@@ -4969,7 +5099,7 @@ function ApplicantRow({ app, onClick }) {
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
           <div style={{ fontFamily: FONT_DISPLAY, fontSize: 19, color: PM.night, letterSpacing: -0.2, lineHeight: 1.1 }}>{app.applicant}</div>
-          <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: PM.inkFaint, letterSpacing: 0.4 }}>{app.age}</div>
+          <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: PM.inkFaint, letterSpacing: 0.4 }}>{highlight ? 'just now' : app.age}</div>
         </div>
         <div style={{ marginTop: 4, fontFamily: FONT_BODY, fontSize: 12, color: PM.inkSoft }}>
           for <strong style={{ color: PM.night }}>{pet ? pet.name : app.petKey}</strong> · {app.household} · {app.location}
@@ -5264,108 +5394,444 @@ function ApprovedPanel({ app }) {
 Object.assign(window, { ShelterFormsScreen, ShelterAppReviewScreen });
 
 </script>
-  <script type="text/babel" data-source="shelter-demo.jsx">
-/* shelter-demo.jsx */
-// shelter-demo.jsx — cross-end presentation demo.
-//
-// Hosted in the adopter HTML. Defines:
-//   • a tiny event-bus + hook for toggling the shelter peek state
-//   • ShelterDemoToggle  — pill button that lives in the Matches header
-//   • ShelterDemoView    — mini-app that renders only the shelter Forms /
-//     Application Review screens (no splash / login / tab bar)
-// The Stage component in PawMatch.html watches the bus and decides whether
-// to render one iOS device frame or two side-by-side.
+  <script type="text/babel" data-source="screens-shelter-misc.jsx">
+/* screens-shelter-misc.jsx */
+// screens-shelter-misc.jsx — Chat list + thread + Me/Account tab.
 
-// ─── Event bus ────────────────────────────────────────────
-window.__pmShelterDemo = !!window.__pmShelterDemo;
-window.__pmToggleShelterDemo = function () {
-  window.__pmShelterDemo = !window.__pmShelterDemo;
-  window.dispatchEvent(new CustomEvent('pm-shelter-demo-changed', {
-    detail: { on: window.__pmShelterDemo },
-  }));
-};
-
-function useShelterDemo() {
-  const [on, setOn] = React.useState(!!window.__pmShelterDemo);
-  React.useEffect(() => {
-    const handler = (e) => setOn(!!(e && e.detail ? e.detail.on : window.__pmShelterDemo));
-    window.addEventListener('pm-shelter-demo-changed', handler);
-    return () => window.removeEventListener('pm-shelter-demo-changed', handler);
-  }, []);
-  return on;
+function ShelterChatScreen({ goto, tab, setTab }) {
+  const rows = SHELTER_CHATS;
+  return (
+    <div style={{ position: 'absolute', inset: 0, background: PM.cream, display: 'flex', flexDirection: 'column' }}>
+      <TopBar title="Chat" large subtitle="Direct line to every applicant."/>
+      <div style={{ flex: 1, overflow: 'auto', padding: '12px 0 110px' }}>
+        {rows.length === 0 ? (
+          <EmptyState
+            title="No conversations yet"
+            sub="When you message an applicant, your threads will live here."
+            cta="See applications"
+            onCta={() => setTab('forms')}
+          />
+        ) : (
+          rows.map((c, i) => <ShelterChatRow key={i} {...c} onClick={() => goto('chatThread', { pet: c.petKey })}/>)
+        )}
+      </div>
+      <ShelterTabBar active={tab} onChange={setTab}/>
+    </div>
+  );
 }
 
-// ─── Toggle button (lives in Matches header right slot) ───
-
-function ShelterDemoToggle() {
-  const on = useShelterDemo();
+function ShelterChatRow({ who, sub, preview, age, unread, petKey, onClick }) {
+  const pet = (window.PETS || {})[petKey];
+  const Art = pet && pet.Art;
   return (
-    <button onClick={() => window.__pmToggleShelterDemo()} style={{
-      height: 36, padding: '0 12px', borderRadius: 18,
-      background: on ? '#FFF' : PM.violet,
-      color:      on ? PM.violet : '#FFF',
-      border:     on ? `1.5px solid ${PM.violet}` : 'none',
-      cursor: 'pointer',
-      display: 'flex', alignItems: 'center', gap: 6,
-      fontFamily: FONT_BODY, fontSize: 11, fontWeight: 700, letterSpacing: 0.3,
-      boxShadow: on ? 'none' : '0 4px 12px rgba(0,52,255,0.30)',
-      transition: 'all 0.18s',
-      whiteSpace: 'nowrap',
+    <button onClick={onClick} style={{
+      width: '100%', display: 'flex', gap: 12, padding: '12px 20px', alignItems: 'center',
+      background: 'transparent', border: 'none', borderBottom: `1px solid ${PM.lineSoft}`,
+      cursor: 'pointer', textAlign: 'left',
     }}>
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-        <rect x="0.5" y="1.5" width="5" height="11" rx="1" stroke="currentColor" strokeWidth="1.4" fill="none"/>
-        <rect x="8.5" y="1.5" width="5" height="11" rx="1" stroke="currentColor" strokeWidth="1.4" fill="none"/>
-        <path d="M6 7 L 8 7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-      </svg>
-      {on ? 'Hide shelter' : 'Show shelter view'}
+      <div style={{
+        width: 50, height: 50, borderRadius: 25, flexShrink: 0,
+        background: PM.coral, color: '#FFF',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontFamily: FONT_DISPLAY, fontSize: 18,
+      }}>{who.split(' ').map(w => w[0]).join('').slice(0, 2)}</div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+          <div style={{ fontFamily: FONT_BODY, fontSize: 14, fontWeight: 600, color: PM.night }}>{who}</div>
+          <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: PM.inkFaint, letterSpacing: 0.3 }}>{age}</div>
+        </div>
+        <div style={{ fontFamily: FONT_BODY, fontSize: 12, color: PM.inkFaint, marginTop: 2 }}>{sub}</div>
+        <div style={{
+          marginTop: 4, fontFamily: FONT_BODY, fontSize: 13, color: unread ? PM.night : PM.inkSoft,
+          fontWeight: unread ? 600 : 400,
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        }}>{preview}</div>
+      </div>
+      {unread > 0 && (
+        <div style={{ width: 8, height: 8, borderRadius: 4, background: PM.coral, flexShrink: 0 }}/>
+      )}
     </button>
   );
 }
 
-// ─── Demo phone (right side) ──────────────────────────────
+function ShelterChatThreadScreen({ conv, onBack }) {
+  const pet = (window.PETS || {})[conv.petKey];
+  const Art = pet && pet.Art;
+  // Shelter-side mirror of the adopter chat — we're the shelter, applicant is "them".
+  const messages = [
+    { from: 'them', text: `Hi! I just submitted my application for ${pet ? pet.name : 'the pet'} — really excited.`, time: '09:48' },
+    { from: 'me',   text: `Hi ${conv.who.split(' ')[0]}! Thanks so much. We loved your pre-app. Would you and the family be free to meet this weekend?`, time: '10:14' },
+    { from: 'them', text: `Yes please! Saturday afternoon works for us.`, time: '10:32' },
+    { from: 'me',   text: `Great — let's lock in Saturday 2pm at the shelter. Bring the kids! 🌿`, time: '11:02' },
+  ];
+  return (
+    <div style={{ position: 'absolute', inset: 0, background: PM.cream, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ paddingTop: 56, paddingBottom: 12, paddingLeft: 16, paddingRight: 16,
+        background: PM.cream, borderBottom: `1px solid ${PM.lineSoft}`,
+        display: 'flex', alignItems: 'center', gap: 12,
+      }}>
+        <button onClick={onBack} style={{
+          width: 36, height: 36, borderRadius: 18, border: 'none', background: PM.white,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+        }}>
+          <svg width="13" height="13" viewBox="0 0 13 13"><path d="M8 1 L 3 6.5 L 8 12" stroke={PM.night} strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        </button>
+        <div style={{
+          width: 38, height: 38, borderRadius: 19, overflow: 'hidden',
+          background: PM.coral, color: '#FFF',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontFamily: FONT_DISPLAY, fontSize: 14,
+        }}>{conv.who.split(' ').map(w => w[0]).join('').slice(0, 2)}</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontFamily: FONT_BODY, fontSize: 14, fontWeight: 600, color: PM.night }}>{conv.who}</div>
+          <div style={{ fontFamily: FONT_BODY, fontSize: 11, color: PM.mint, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ width: 6, height: 6, borderRadius: 3, background: PM.mint, display: 'inline-block' }}/>
+            {conv.sub}
+          </div>
+        </div>
+      </div>
+
+      <div style={{ flex: 1, overflow: 'auto', padding: '16px 16px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ textAlign: 'center', fontFamily: FONT_MONO, fontSize: 10, color: PM.inkFaint, letterSpacing: 1, textTransform: 'uppercase' }}>Today</div>
+        {messages.map((m, i) => (
+          <ShelterBubble key={i} from={m.from} text={m.text} time={m.time}/>
+        ))}
+      </div>
+
+      <div style={{ padding: '10px 16px 30px', background: PM.cream, borderTop: `1px solid ${PM.lineSoft}` }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <button style={{
+            width: 40, height: 40, borderRadius: 20, background: PM.white, border: 'none',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+          }}>
+            <svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1 L 7 13 M 1 7 L 13 7" stroke={PM.night} strokeWidth="2" strokeLinecap="round"/></svg>
+          </button>
+          <div style={{
+            flex: 1, height: 40, borderRadius: 20, background: PM.white, border: `1px solid ${PM.line}`,
+            display: 'flex', alignItems: 'center', padding: '0 14px',
+            fontFamily: FONT_BODY, fontSize: 14, color: PM.inkFaint,
+          }}>Message…</div>
+          <button style={{
+            width: 40, height: 40, borderRadius: 20, background: PM.coral, border: 'none',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+          }}>
+            <svg width="14" height="14" viewBox="0 0 14 14"><path d="M1 7 L 13 1 L 8 13 L 7 8 Z" fill={PM.cream}/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ShelterBubble({ from, text, time }) {
+  const me = from === 'me';
+  return (
+    <div style={{ display: 'flex', justifyContent: me ? 'flex-end' : 'flex-start' }}>
+      <div style={{
+        maxWidth: '78%',
+        padding: '10px 14px',
+        background: me ? PM.night : PM.white,
+        color: me ? PM.cream : PM.ink,
+        borderRadius: me ? '20px 20px 4px 20px' : '20px 20px 20px 4px',
+        fontFamily: FONT_BODY, fontSize: 14, lineHeight: 1.4,
+        boxShadow: me ? 'none' : '0 1px 3px rgba(20,20,40,0.04)',
+      }}>
+        {text}
+        <div style={{ marginTop: 4, fontFamily: FONT_MONO, fontSize: 9, opacity: 0.55, textAlign: 'right' }}>{time}</div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Me / Account ──────────────────────────────────────────
+
+function ShelterMeScreen({ goto, tab, setTab }) {
+  return (
+    <div style={{ position: 'absolute', inset: 0, background: PM.cream, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ paddingTop: 58, paddingLeft: 20, paddingRight: 20, paddingBottom: 8 }}>
+        <div style={{
+          fontFamily: FONT_DISPLAY, fontSize: 26, fontWeight: 400, color: PM.night, letterSpacing: -0.5,
+        }}>
+          Account
+        </div>
+        <div style={{ fontFamily: FONT_BODY, fontSize: 12, color: PM.inkSoft, marginTop: 2 }}>
+          Organization profile, team & billing
+        </div>
+      </div>
+
+      <div style={{ flex: 1, overflow: 'auto', padding: '12px 20px 110px' }}>
+        {/* Org hero card */}
+        <div style={{
+          background: `linear-gradient(160deg, ${PM.coralSoft} 0%, #FFE4F0 100%)`,
+          borderRadius: 24, padding: 20, marginBottom: 22,
+          display: 'flex', alignItems: 'center', gap: 14,
+        }}>
+          <div style={{
+            width: 68, height: 68, borderRadius: '50%',
+            background: PM.coral, color: '#FFF',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontFamily: FONT_DISPLAY, fontSize: 24,
+            flexShrink: 0, boxShadow: '0 6px 16px rgba(255,0,131,0.35)',
+          }}>
+            {SHELTER.name.split(' ').map(w => w[0]).join('').slice(0, 2)}
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 22, fontWeight: 400, letterSpacing: -0.3, color: PM.night, lineHeight: 1.1 }}>
+              {SHELTER.name}
+            </div>
+            <div style={{ marginTop: 4, fontFamily: FONT_BODY, fontSize: 12, color: PM.inkSoft }}>
+              Operator: {SHELTER.operator} · since {SHELTER.joinedYear}
+            </div>
+            {SHELTER.verified && (
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 5,
+                marginTop: 8, padding: '3px 10px', borderRadius: 11,
+                background: '#FFF', color: PM.mint,
+                fontFamily: FONT_BODY, fontSize: 11, fontWeight: 700,
+              }}>
+                ✓ Verified 501(c)(3)
+              </div>
+            )}
+          </div>
+        </div>
+
+        <MeGroup title="Organization">
+          <MeRow label="Address"    value={SHELTER.district}/>
+          <MeRow label="Categories" value={SHELTER.categories.join(' · ')}/>
+          <MeRow label="Active pets" value={`${SHELTER.totalActive}`}/>
+          <MeRow label="Alumni"     value={`${SHELTER.totalAlumni} adopted`}/>
+        </MeGroup>
+
+        <MeGroup title="Team" hint="2 members">
+          <MeRow label="Meadow Park" value="Operator · admin"/>
+          <MeRow label="Riley Cho"   value="Volunteer · review only"/>
+        </MeGroup>
+
+        <MeGroup title="Billing">
+          <MeRow label="Plan"  value="Shelter · Free"/>
+          <MeRow label="Boosts active" value="0"/>
+        </MeGroup>
+
+        <button style={{
+          width: '100%', height: 50, borderRadius: 25,
+          background: 'transparent', color: PM.inkSoft, border: `1px solid ${PM.line}`,
+          fontFamily: FONT_BODY, fontSize: 13, fontWeight: 500, cursor: 'pointer',
+          marginTop: 18,
+        }}>Sign out</button>
+      </div>
+
+      <ShelterTabBar active={tab} onChange={setTab}/>
+    </div>
+  );
+}
+
+function MeGroup({ title, hint, children }) {
+  return (
+    <div style={{ marginBottom: 18 }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, padding: '0 4px 8px' }}>
+        <div style={{ fontFamily: FONT_BODY, fontSize: 13, color: PM.night, fontWeight: 600 }}>{title}</div>
+        {hint && <div style={{ fontFamily: FONT_BODY, fontSize: 11, color: PM.inkFaint }}>{hint}</div>}
+      </div>
+      <div style={{ background: PM.white, borderRadius: 18, overflow: 'hidden', boxShadow: '0 2px 8px rgba(20,20,40,0.04)' }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function MeRow({ label, value }) {
+  return (
+    <div style={{
+      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+      padding: '14px 16px', borderBottom: `1px solid ${PM.lineSoft}`,
+    }}>
+      <span style={{ fontFamily: FONT_BODY, fontSize: 13, color: PM.inkSoft }}>{label}</span>
+      <span style={{ fontFamily: FONT_BODY, fontSize: 14, color: PM.ink, fontWeight: 500 }}>{value}</span>
+    </div>
+  );
+}
+
+Object.assign(window, { ShelterChatScreen, ShelterChatThreadScreen, ShelterMeScreen });
+
+</script>
+  <script type="text/babel" data-source="shelter-demo.jsx">
+/* shelter-demo.jsx */
+// shelter-demo.jsx — cross-end presentation demo.
+//
+// Replaces the old standalone toggle.  The demo is now driven by what the
+// user does inside the apps:
+//   1. Submit Poppy on adopter Matches  → shelter view slides in,
+//                                          Sarah Chen's pre-app appears
+//   2. Tap Sarah on shelter side        → shelter right phone shows
+//                                          her Application Review
+//   3. Tap Message in Application Review → shelter side opens chat with
+//                                          Sarah; adopter Chat tab shows
+//                                          unread; Poppy row shows
+//                                          "Shelter replied"
+//   4. Tap Reset demo in Matches header → everything snaps back.
+//
+// All state lives on `window.__pmDemoState`; subscribe with useDemoState().
+
+// ─── State bus ────────────────────────────────────────────
+
+if (!window.__pmDemoState) {
+  window.__pmDemoState = {
+    shelterVisible:  false,
+    sarahSubmitted:  false,
+    shelterMessaged: false,
+    sarahJustArrived: false,   // transient — drives the slide-in animation
+  };
+}
+
+function pmBroadcastDemo() {
+  window.dispatchEvent(new CustomEvent('pm-demo-state-changed', {
+    detail: { ...window.__pmDemoState },
+  }));
+}
+
+window.__pmDemoActions = {
+  submitPoppy() {
+    window.__pmDemoState.shelterVisible = true;
+    window.__pmDemoState.sarahSubmitted = true;
+    window.__pmDemoState.sarahJustArrived = true;
+    pmBroadcastDemo();
+    // Clear the "just arrived" flag after the highlight animation finishes
+    // so re-renders don't keep firing it.
+    setTimeout(() => {
+      window.__pmDemoState.sarahJustArrived = false;
+      pmBroadcastDemo();
+    }, 3000);
+  },
+  shelterMessages() {
+    window.__pmDemoState.shelterMessaged = true;
+    pmBroadcastDemo();
+  },
+  reset() {
+    window.__pmDemoState = {
+      shelterVisible:  false,
+      sarahSubmitted:  false,
+      shelterMessaged: false,
+      sarahJustArrived: false,
+    };
+    pmBroadcastDemo();
+  },
+};
+
+function useDemoState() {
+  const [s, setS] = React.useState({ ...window.__pmDemoState });
+  React.useEffect(() => {
+    const h = () => setS({ ...window.__pmDemoState });
+    window.addEventListener('pm-demo-state-changed', h);
+    return () => window.removeEventListener('pm-demo-state-changed', h);
+  }, []);
+  return s;
+}
+
+// ─── Reset button (used by Matches TopBar) ────────────────
+
+function ResetDemoButton() {
+  const s = useDemoState();
+  const showing = s.shelterVisible || s.sarahSubmitted || s.shelterMessaged;
+  if (!showing) return null;
+  return (
+    <button onClick={() => window.__pmDemoActions.reset()} style={{
+      height: 36, padding: '0 12px', borderRadius: 18,
+      background: '#FFF', color: PM.violet,
+      border: `1.5px solid ${PM.violet}`, cursor: 'pointer',
+      display: 'flex', alignItems: 'center', gap: 6,
+      fontFamily: FONT_BODY, fontSize: 11, fontWeight: 700, letterSpacing: 0.3,
+      whiteSpace: 'nowrap',
+    }}>
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M3 7 Q 3 2.5, 7 2.5 Q 11 2.5, 11 7 Q 11 11.5, 7 11.5"
+              stroke="currentColor" strokeWidth="1.6" fill="none" strokeLinecap="round"/>
+        <path d="M3 7 L 1 5 M 3 7 L 5 5"
+              stroke="currentColor" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+      Reset demo
+    </button>
+  );
+}
+
+// ─── Right-phone demo view ────────────────────────────────
 
 function ShelterDemoView() {
-  // Local route stack — starts on Forms with Pre-app focused on Sarah Chen.
+  const s = useDemoState();
   const [stack, setStack] = React.useState([{ name: 'forms', params: {} }]);
   const current = stack[stack.length - 1];
 
-  const goto = (name, params = {}) => setStack(s => [...s, { name, params }]);
-  const back = () => setStack(s => s.length > 1 ? s.slice(0, -1) : s);
-  const noop = () => {};
+  // When Sarah is unsubmitted, present a filtered application list that hides
+  // her record so the Pre-app segment looks "empty (waiting)".
+  const applicationsForDemo = React.useMemo(() => {
+    if (s.sarahSubmitted) {
+      // Reorder: put Sarah at the very top so she's visible immediately
+      const sarah = (APPLICATIONS || []).filter(a => a.applicant === 'Sarah Chen');
+      const rest  = (APPLICATIONS || []).filter(a => a.applicant !== 'Sarah Chen');
+      return [...sarah, ...rest];
+    }
+    return (APPLICATIONS || []).filter(a => a.applicant !== 'Sarah Chen');
+  }, [s.sarahSubmitted]);
+
+  const goto = (name, params = {}) => setStack(st => [...st, { name, params }]);
+  const back = () => setStack(st => st.length > 1 ? st.slice(0, -1) : st);
+
+  // When the shelter clicks Message inside Application Review we want to:
+  //   (a) navigate the right phone into the chat thread
+  //   (b) fire the global event so the adopter chat tab shows unread
+  const goFromReview = (name, params) => {
+    if (name === 'chatThread') {
+      window.__pmDemoActions.shelterMessages();
+    }
+    goto(name, params);
+  };
 
   let screen;
   switch (current.name) {
     case 'forms':
       screen = (
         <ShelterFormsScreen
-          goto={goto} tab="forms" setTab={noop}
+          goto={goto} tab="forms" setTab={() => {}}
           initialSeg="pre-app" hideTabBar
+          apps={applicationsForDemo}
+          highlightApplicant={s.sarahJustArrived ? 'Sarah Chen' : null}
         />
       );
       break;
     case 'appReview': {
-      const app = (APPLICATIONS || []).find(a => a.id === current.params?.id) || APPLICATIONS[0];
+      const app = applicationsForDemo.find(a => a.id === current.params?.id)
+        || (APPLICATIONS || []).find(a => a.id === current.params?.id)
+        || APPLICATIONS[0];
       screen = (
         <ShelterAppReviewScreen
           app={app}
           onBack={back}
-          goto={(n, p) => p ? goto(n, p) : goto(n)}
-          setTab={noop}
+          goto={goFromReview}
+          setTab={() => {}}
         />
       );
+      break;
+    }
+    case 'chatThread': {
+      // Pull a conversation row matching the pet; fall back to Sarah Chen.
+      const petKey = current.params?.pet || 'poppy';
+      let conv = (window.SHELTER_CHATS || []).find(c => c.petKey === petKey);
+      if (!conv) {
+        conv = { who: 'Sarah Chen', sub: 'About Poppy', petKey, preview: '', age: 'now', unread: 0 };
+      }
+      screen = <ShelterChatThreadScreen conv={conv} onBack={back}/>;
       break;
     }
     default:
       screen = (
         <div style={{ padding: 40, fontFamily: FONT_BODY }}>
-          Demo route not found: {current.name}
+          Unknown demo route: {current.name}
         </div>
       );
   }
   return screen;
 }
 
-Object.assign(window, { useShelterDemo, ShelterDemoToggle, ShelterDemoView });
+Object.assign(window, { useDemoState, ResetDemoButton, ShelterDemoView });
 
 </script>
 
@@ -5374,7 +5840,8 @@ Object.assign(window, { useShelterDemo, ShelterDemoToggle, ShelterDemoView });
     // keeping native pixels. When the shelter demo is toggled on, render a
     // second iOS frame to the right showing the shelter Forms view.
     function Stage() {
-      const showShelter = (typeof useShelterDemo === 'function') ? useShelterDemo() : false;
+      const demoState = (typeof useDemoState === 'function') ? useDemoState() : null;
+      const showShelter = !!(demoState && demoState.shelterVisible);
       const [scale, setScale] = React.useState(1);
       React.useEffect(() => {
         const onResize = () => {

@@ -398,6 +398,13 @@ const ADOPTER_CLAIMS = [
     provider: 'Lemonade Pet · Plus', amount: 265.00, copay: 25.00, payout: 240.00,
     visit: 'Wed Apr 16, 2026 · Wellness · Forest Park Veterinary',
     submittedAge: 'Just now', status: 'Pending',
+    items: [
+      { label: 'Wellness exam · Dr. Patel',  charge: 95.00 },
+      { label: 'New-patient intake',          charge: 35.00 },
+      { label: 'DHPP booster · 1 ml SQ',      charge: 45.00 },
+      { label: 'Bordetella intranasal',       charge: 30.00 },
+      { label: 'Heartworm/parasite screen (4Dx)', charge: 60.00 },
+    ],
     timeline: [
       { label: 'Submitted by Dr. Patel', when: 'Just now',          done: true  },
       { label: 'Under review',           when: 'expected today',     done: false },
@@ -497,6 +504,7 @@ function PetCareScreen({ goto, tab, setTab }) {
 }
 
 function AdopterClaimsList({ claims }) {
+  const fee = useExtraFee();
   const badgeStyle = (status) => ({
     Draft:    { bg: '#FFF1D6', fg: '#9A6A00' },
     Pending:  { bg: '#D6E8FF', fg: '#0034FF' },
@@ -512,37 +520,84 @@ function AdopterClaimsList({ claims }) {
     );
   }
   return (
-    <div style={{ padding: '4px 20px 24px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+    <div style={{ padding: '4px 20px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: PM.inkSoft, letterSpacing: 0.8, textTransform: 'uppercase', margin: '4px 4px 2px' }}>
         Submitted by your vets
       </div>
       {claims.map(c => {
         const b = badgeStyle(c.status);
+        const owedNow = fee.paid ? 0 : c.copay;
         return (
           <div key={c.id} style={{
-            padding: 14, borderRadius: 18, background: PM.white,
+            padding: 16, borderRadius: 20, background: PM.white,
             boxShadow: '0 1px 2px rgba(20,20,40,0.03), 0 6px 18px rgba(20,20,40,0.04)',
           }}>
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-              <div style={{ fontFamily: FONT_BODY, fontSize: 14, fontWeight: 700, color: PM.night }}>
-                {c.petName} <span style={{ color: PM.inkFaint, fontWeight: 500 }}>· claim {c.id.split('-').slice(-1)[0]}</span>
+              <div style={{ fontFamily: FONT_DISPLAY, fontSize: 18, color: PM.night, letterSpacing: -0.3, lineHeight: 1.1 }}>
+                {c.petName}
+                <span style={{ marginLeft: 8, fontFamily: FONT_MONO, fontSize: 11, color: PM.inkFaint, fontStyle: 'normal', fontWeight: 400, letterSpacing: 0.4 }}>{c.id}</span>
               </div>
-              <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: PM.inkFaint, letterSpacing: 0.4 }}>{c.submittedAge}</div>
-            </div>
-            <div style={{ marginTop: 4, fontFamily: FONT_BODY, fontSize: 12, color: PM.inkSoft }}>{c.visit}</div>
-            <div style={{ marginTop: 6, fontFamily: FONT_BODY, fontSize: 12, color: PM.inkSoft }}>{c.provider}</div>
-            <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               <span style={{
-                padding: '3px 8px', borderRadius: 8,
-                background: b.bg, color: b.fg,
+                padding: '3px 8px', borderRadius: 8, background: b.bg, color: b.fg,
                 fontFamily: FONT_MONO, fontSize: 10, letterSpacing: 0.4, textTransform: 'uppercase', fontWeight: 700,
               }}>{c.status}</span>
-              <span style={{ fontFamily: FONT_MONO, fontSize: 11, color: PM.ink, fontWeight: 700, marginLeft: 'auto' }}>
-                Billed ${c.amount.toFixed(2)} · Lemonade pays ${c.payout.toFixed(2)}
-              </span>
             </div>
+            <div style={{ marginTop: 4, fontFamily: FONT_BODY, fontSize: 12, color: PM.inkSoft }}>{c.visit}</div>
+            <div style={{ marginTop: 2, fontFamily: FONT_BODY, fontSize: 12, color: PM.inkSoft }}>{c.provider} · submitted {c.submittedAge}</div>
+
+            {/* Itemized line items */}
+            {c.items && c.items.length > 0 && (
+              <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${PM.lineSoft}` }}>
+                <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: PM.inkSoft, letterSpacing: 0.8, textTransform: 'uppercase', fontWeight: 600, marginBottom: 8 }}>
+                  Itemized charges
+                </div>
+                {c.items.map((it, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0' }}>
+                    <span style={{ fontFamily: FONT_BODY, fontSize: 13, color: PM.ink }}>{it.label}</span>
+                    <span style={{ fontFamily: FONT_MONO, fontSize: 13, color: PM.ink, fontWeight: 600 }}>${it.charge.toFixed(2)}</span>
+                  </div>
+                ))}
+                <div style={{ marginTop: 6, paddingTop: 6, borderTop: `1px dashed ${PM.line}`, display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ fontFamily: FONT_BODY, fontSize: 13, color: PM.ink, fontWeight: 600 }}>Subtotal</span>
+                  <span style={{ fontFamily: FONT_MONO, fontSize: 13, color: PM.ink, fontWeight: 700 }}>${c.amount.toFixed(2)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
+                  <span style={{ fontFamily: FONT_BODY, fontSize: 13, color: PM.coral, fontWeight: 600 }}>{c.provider.split('·')[0].trim()} coverage</span>
+                  <span style={{ fontFamily: FONT_MONO, fontSize: 13, color: PM.coral, fontWeight: 700 }}>−${c.payout.toFixed(2)}</span>
+                </div>
+                <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1.5px solid ${PM.night}`,
+                              display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                  <span style={{ fontFamily: FONT_DISPLAY, fontSize: 16, color: PM.night }}>You owe</span>
+                  {owedNow > 0 ? (
+                    <span style={{ fontFamily: FONT_DISPLAY, fontSize: 22, color: PM.coral, fontStyle: 'italic' }}>${c.copay.toFixed(2)}</span>
+                  ) : (
+                    <span style={{
+                      padding: '4px 10px', borderRadius: 12,
+                      background: '#E6F8EF', color: '#1E8A5A',
+                      fontFamily: FONT_MONO, fontSize: 11, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase',
+                    }}>Paid ✓</span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Pay-now lives directly on the card so users can act without
+                opening the bell drawer. Hidden once the copay is settled. */}
+            {owedNow > 0 && (
+              <button onClick={fee.markPaid} style={{
+                marginTop: 12, width: '100%', height: 44, borderRadius: 22,
+                background: PM.coral, color: '#FFF', border: 'none', cursor: 'pointer',
+                fontFamily: FONT_BODY, fontSize: 13, fontWeight: 600,
+                boxShadow: '0 4px 12px rgba(255,0,131,0.32)',
+              }}>Pay ${c.copay.toFixed(2)} now</button>
+            )}
+
+            {/* Status timeline */}
             {c.timeline && (
-              <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${PM.lineSoft}` }}>
+              <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${PM.lineSoft}` }}>
+                <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: PM.inkSoft, letterSpacing: 0.8, textTransform: 'uppercase', fontWeight: 600, marginBottom: 6 }}>
+                  Status
+                </div>
                 {c.timeline.map((s, i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px 0' }}>
                     <span style={{

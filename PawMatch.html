@@ -87,6 +87,7 @@
   <script type="text/babel" src="shelter-data.jsx"></script>
   <script type="text/babel" src="app-shelter.jsx"></script>
   <script type="text/babel" src="screens-shelter-forms.jsx"></script>
+  <script type="text/babel" src="screens-shelter-misc.jsx"></script>
   <script type="text/babel" src="shelter-demo.jsx"></script>
 
   <script type="text/babel">
@@ -94,7 +95,8 @@
     // keeping native pixels. When the shelter demo is toggled on, render a
     // second iOS frame to the right showing the shelter Forms view.
     function Stage() {
-      const showShelter = (typeof useShelterDemo === 'function') ? useShelterDemo() : false;
+      const demoState = (typeof useDemoState === 'function') ? useDemoState() : null;
+      const showShelter = !!(demoState && demoState.shelterVisible);
       const [scale, setScale] = React.useState(1);
       React.useEffect(() => {
         const onResize = () => {
