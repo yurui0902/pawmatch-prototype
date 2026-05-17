@@ -73,81 +73,54 @@ function ShelterHomeScreen({ goto, tab, setTab }) {
       </div>
 
       <div style={{ flex: 1, overflow: 'auto', padding: '12px 20px 110px' }}>
-        {/* Big-ticket stat hero — pink, count-up, hero-sized number */}
+        {/* Hero stat tile — same dark style as the vet Home, balanced number + label */}
         <div style={{
-          padding: '22px 22px 24px', borderRadius: 28,
-          background: `linear-gradient(160deg, ${PM.coral} 0%, #E8388F 100%)`,
-          color: '#FFF', marginBottom: 14,
+          padding: 20, borderRadius: 24, background: PM.night, color: PM.cream, marginBottom: 12,
           position: 'relative', overflow: 'hidden',
-          boxShadow: '0 12px 36px rgba(255,0,131,0.32)',
         }}>
-          <style>{`
-            @keyframes pm-spark-orbit {
-              0%, 100% { transform: translate(0, 0) rotate(0deg); opacity: 0.4; }
-              50%      { transform: translate(-4px, -4px) rotate(180deg); opacity: 1; }
-            }
-          `}</style>
-          {/* sparkle accents */}
-          <span style={{
-            position: 'absolute', top: 18, right: 100,
-            fontSize: 14, color: '#FFFFFF', opacity: 0.75,
-            animation: 'pm-spark-orbit 3.6s ease-in-out infinite',
-          }}>✦</span>
-          <span style={{
-            position: 'absolute', top: 64, right: 160,
-            fontSize: 10, color: '#FFFFFF', opacity: 0.55,
-            animation: 'pm-spark-orbit 3.6s ease-in-out 1.2s infinite',
-          }}>✦</span>
-          {/* +18% green pill, top-right */}
-          <div style={{
-            position: 'absolute', top: 18, right: 18,
-            padding: '5px 11px', borderRadius: 14,
-            background: '#FFFFFF', color: PM.mint,
-            fontFamily: FONT_MONO, fontSize: 11, fontWeight: 700, letterSpacing: 0.4,
-            boxShadow: '0 4px 10px rgba(20,20,40,0.18)',
-            display: 'flex', alignItems: 'center', gap: 4,
-          }}>
-            <span style={{ fontFamily: FONT_DISPLAY, fontSize: 13 }}>↑</span>
-            +{Math.round(SHELTER_STATS.adoptedDelta * 100)}%
-          </div>
-
-          <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: 'rgba(255,255,255,0.85)', letterSpacing: 1.5, textTransform: 'uppercase', fontWeight: 700 }}>
+          <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: PM.coralSoft, letterSpacing: 1.5, textTransform: 'uppercase' }}>
             Adoptions this month
           </div>
-          <div style={{
-            fontFamily: FONT_DISPLAY, fontSize: 88, letterSpacing: -3.2, lineHeight: 0.95,
-            marginTop: 8, fontVariantNumeric: 'tabular-nums',
-          }}>{count}</div>
-          <div style={{ marginTop: 6, fontFamily: FONT_BODY, fontSize: 13, opacity: 0.95, fontWeight: 500 }}>
-            pets placed in forever homes · vs last month
+          <div style={{ marginTop: 6, display: 'flex', alignItems: 'baseline', gap: 12 }}>
+            <div style={{
+              fontFamily: FONT_DISPLAY, fontSize: 52, letterSpacing: -1.6, lineHeight: 0.95,
+              fontVariantNumeric: 'tabular-nums',
+            }}>{count}</div>
+            <div>
+              <div style={{ fontFamily: FONT_BODY, fontSize: 16, fontWeight: 600, lineHeight: 1 }}>pets placed</div>
+              <div style={{ marginTop: 4, fontFamily: FONT_MONO, fontSize: 11, color: PM.mint, fontWeight: 600 }}>
+                ↑ +{Math.round(SHELTER_STATS.adoptedDelta * 100)}% vs last month
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Stat tile pair */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
-          <StatTile label="Swipes this week" value={SHELTER_STATS.totalSwipesWeek.toLocaleString()} accent={PM.violet}/>
+          <StatTile label="Swipes this week" value={SHELTER_STATS.totalSwipesWeek.toLocaleString()} accent={PM.night}/>
           <StatTile label="Likes this week"  value={SHELTER_STATS.totalLikesWeek.toLocaleString()} accent={PM.coral}/>
         </div>
 
-        {/* Pending applications callout */}
+        {/* Applications waiting — calmer card matching the vet "In-network" tile feel */}
         <button onClick={() => setTab('forms')} style={{
-          width: '100%', padding: 18, borderRadius: 22, marginBottom: 18,
-          background: PM.coral, color: '#FFF', border: 'none', cursor: 'pointer',
+          width: '100%', padding: 16, borderRadius: 22, marginBottom: 18,
+          background: PM.white, color: PM.night, border: 'none', cursor: 'pointer',
           textAlign: 'left', display: 'flex', alignItems: 'center', gap: 14,
-          boxShadow: '0 8px 22px rgba(255,0,131,0.32)',
+          boxShadow: '0 1px 3px rgba(20,20,40,0.04), 0 6px 18px rgba(20,20,40,0.04)',
+          borderLeft: `3px solid ${PM.coral}`,
         }}>
           <div style={{
-            width: 52, height: 52, borderRadius: 26, background: 'rgba(255,255,255,0.18)',
+            width: 48, height: 48, borderRadius: 24, background: `${PM.coral}18`, color: PM.coral,
             display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            fontFamily: FONT_DISPLAY, fontSize: 26, fontWeight: 400,
+            fontFamily: FONT_DISPLAY, fontSize: 22, letterSpacing: -0.4,
           }}>{APPLICATIONS.length}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontFamily: FONT_BODY, fontSize: 13, opacity: 0.85, fontWeight: 600 }}>Applications waiting</div>
-            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 18, marginTop: 2, letterSpacing: -0.2 }}>
+            <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: PM.coral, letterSpacing: 1, textTransform: 'uppercase', fontWeight: 700 }}>Applications waiting</div>
+            <div style={{ marginTop: 2, fontFamily: FONT_BODY, fontSize: 14, color: PM.night, fontWeight: 600 }}>
               {pending} new pre-apps · {APPLICATIONS.length - pending} in progress
             </div>
           </div>
-          <span style={{ fontFamily: FONT_DISPLAY, fontSize: 24 }}>→</span>
+          <span style={{ fontFamily: FONT_DISPLAY, fontSize: 22, color: PM.inkSoft }}>→</span>
         </button>
 
         {/* Top performing pets */}
@@ -175,13 +148,13 @@ function ShelterHomeScreen({ goto, tab, setTab }) {
           <DemoBar label="Roommates"       pct={0.09} color={PM.mint} last/>
         </div>
 
-        {/* Boost CTA */}
+        {/* Boost CTA — single accent color to match the calmer palette */}
         <div style={{
           padding: 18, borderRadius: 22, marginBottom: 14,
-          background: `linear-gradient(135deg, ${PM.violet}15 0%, ${PM.coral}15 100%)`,
-          border: `1.5px dashed ${PM.violet}`,
+          background: `${PM.coral}10`,
+          border: `1.5px dashed ${PM.coral}`,
         }}>
-          <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: PM.violet, letterSpacing: 1.4, textTransform: 'uppercase', fontWeight: 700 }}>
+          <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: PM.coral, letterSpacing: 1.4, textTransform: 'uppercase', fontWeight: 700 }}>
             Reach more adopters
           </div>
           <div style={{ fontFamily: FONT_DISPLAY, fontSize: 22, color: PM.night, marginTop: 4, letterSpacing: -0.3, lineHeight: 1.15 }}>
@@ -229,9 +202,10 @@ function TopPetRow({ pet, rank, onClick }) {
     }}>
       <div style={{
         width: 30, height: 30, borderRadius: 15,
-        background: rank === 1 ? PM.coral : rank === 2 ? PM.violet : PM.gold,
+        background: rank === 1 ? PM.coral : PM.night,
         color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontFamily: FONT_DISPLAY, fontSize: 14, flexShrink: 0,
+        opacity: rank === 1 ? 1 : 0.85 - (rank - 1) * 0.15,
       }}>{rank}</div>
       <div style={{
         width: 40, height: 40, borderRadius: 12,

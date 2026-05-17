@@ -111,6 +111,7 @@ function ShelterApp() {
       const pet = (SHELTER_PETS || []).find(p => p.key === current.params?.pet);
       screen = <ShelterPetDetailScreen pet={pet} onBack={back}/>; break;
     }
+    case 'addPet':       screen = <ShelterAddPetScreen onBack={back} onDone={() => back()}/>; break;
     case 'forms':        screen = <ShelterFormsScreen   goto={(n,p)=>goto(n,p)} tab={tab} setTab={onTabChange}/>; break;
     case 'appReview': {
       const app = (APPLICATIONS || []).find(a => a.id === current.params?.id);

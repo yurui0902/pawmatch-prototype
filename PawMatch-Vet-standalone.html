@@ -1548,18 +1548,18 @@ function VetHomeScreen({ goto, tab, setTab }) {
       </div>
 
       <div style={{ flex: 1, overflow: 'auto', padding: '12px 20px 110px' }}>
-        {/* Hero stat tile */}
+        {/* Hero stat tile — number sized to balance with the label */}
         <div style={{
           padding: 20, borderRadius: 24, background: PM.night, color: PM.cream, marginBottom: 12,
           position: 'relative', overflow: 'hidden',
         }}>
           <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: PM.coralSoft, letterSpacing: 1.5, textTransform: 'uppercase' }}>Today</div>
           <div style={{ marginTop: 6, display: 'flex', alignItems: 'baseline', gap: 12 }}>
-            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 64, letterSpacing: -2, lineHeight: 0.95 }}>
+            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 44, letterSpacing: -1.4, lineHeight: 0.95 }}>
               {VET_STATS.todayAppointments}
             </div>
             <div>
-              <div style={{ fontFamily: FONT_BODY, fontSize: 13, opacity: 0.7 }}>appointments</div>
+              <div style={{ fontFamily: FONT_BODY, fontSize: 18, fontWeight: 600, lineHeight: 1 }}>appointments</div>
               <div style={{ marginTop: 4, fontFamily: FONT_MONO, fontSize: 11, color: PM.mint, fontWeight: 600 }}>
                 ↑ {VET_STATS.delta} · 3 new
               </div>
@@ -1570,20 +1570,6 @@ function VetHomeScreen({ goto, tab, setTab }) {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 18 }}>
           <VetStatTile label="Draft notes"    value={VET_STATS.draftNotes}    accent={PM.gold}   onClick={() => setTab('record')}/>
           <VetStatTile label="Pending claims" value={VET_STATS.pendingClaims} accent={PM.coral}  onClick={() => setTab('claims')}/>
-        </div>
-
-        {/* Today's schedule */}
-        <div style={{ marginBottom: 18 }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
-            <div style={{ fontFamily: FONT_BODY, fontSize: 13, color: PM.night, fontWeight: 700 }}>Today's schedule</div>
-            <button onClick={() => setTab('calendar')} style={{
-              background: 'none', border: 'none', cursor: 'pointer',
-              fontFamily: FONT_BODY, fontSize: 12, color: PM.coral, fontWeight: 600,
-            }}>View all →</button>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {todayApts.map(a => <MiniAptRow key={a.id} apt={a} onClick={() => goto('appointmentDetail', { id: a.id })}/>)}
-          </div>
         </div>
 
         {/* Active patients tile */}
@@ -1610,7 +1596,7 @@ function VetHomeScreen({ goto, tab, setTab }) {
         {/* Insurance partners chip row */}
         <div style={{
           padding: 16, borderRadius: 22,
-          background: `${PM.mint}12`, borderLeft: `3px solid ${PM.mint}`, marginBottom: 14,
+          background: `${PM.mint}12`, borderLeft: `3px solid ${PM.mint}`, marginBottom: 18,
         }}>
           <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: PM.mint, letterSpacing: 1, textTransform: 'uppercase', fontWeight: 700 }}>
             In-network partners
@@ -1622,6 +1608,20 @@ function VetHomeScreen({ goto, tab, setTab }) {
                 fontFamily: FONT_BODY, fontSize: 11, fontWeight: 600, color: PM.night,
               }}>{p}</span>
             ))}
+          </div>
+        </div>
+
+        {/* Today's schedule — moved below Active patients + In-network partners */}
+        <div style={{ marginBottom: 18 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
+            <div style={{ fontFamily: FONT_BODY, fontSize: 13, color: PM.night, fontWeight: 700 }}>Today's schedule</div>
+            <button onClick={() => setTab('calendar')} style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              fontFamily: FONT_BODY, fontSize: 12, color: PM.coral, fontWeight: 600,
+            }}>View all →</button>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {todayApts.map(a => <MiniAptRow key={a.id} apt={a} onClick={() => goto('appointmentDetail', { id: a.id })}/>)}
           </div>
         </div>
       </div>

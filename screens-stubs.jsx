@@ -295,22 +295,9 @@ function VetDetailScreen({ goto, onBack, params }) {
           <div style={{ fontFamily: FONT_BODY, fontSize: 12, opacity: 0.7, marginTop: 4 }}>With Dr. Patel · in-network copay <strong style={{ color: PM.coralSoft }}>$25</strong></div>
         </div>
 
-        {(() => {
-          // Branch the post-booking flow on the adopter's current plan:
-          //   plus / comp  → skip insurance, jump to checkout
-          //   base         → show insurance with an upgrade upsell
-          //   none / null  → skip insurance, retention banner appears in checkout
-          const plan = window.__pmPlan;
-          const hasPremium = plan === 'plus' || plan === 'comp';
-          const hasBase    = plan === 'base';
-          const dest  = hasBase ? 'insurance' : 'checkout';
-          const label = hasPremium ? `Continue to checkout →` :
-                        hasBase    ? `Review insurance →` :
-                                     `Continue (no insurance) →`;
-          return (
-            <PMButton onClick={() => goto(dest)} variant="primary">{label}</PMButton>
-          );
-        })()}
+        {/* Always send the adopter through the Insurance page so they can
+            see prices + the upsell + a Skip-to-self-pay option. */}
+        <PMButton onClick={() => goto('insurance')} variant="primary">Continue →</PMButton>
       </div>
     </div>
   );
@@ -350,7 +337,8 @@ function InsuranceScreen({ goto, onBack, embedded = false }) {
           Prices for Poppy · Mixed · 2y · ZIP 97209
         </div>
 
-        {/* Enrolled banner — shows the active plan + cancel option */}
+        {/* Pending-activation banner — Sarah selected a plan but hasn't
+            finalized at checkout yet, so the status reads "one last step". */}
         {enrolledPlan && (
           <div style={{
             padding: 14, borderRadius: 18, marginBottom: 14,
@@ -364,16 +352,11 @@ function InsuranceScreen({ goto, onBack, embedded = false }) {
               <svg width="18" height="18" viewBox="0 0 18 18"><path d="M3 9 L 7.5 13 L 15 5" stroke="#FFF" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none"/></svg>
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: '#1E6B4D', letterSpacing: 1, textTransform: 'uppercase', fontWeight: 700 }}>● Active</div>
+              <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: '#1E6B4D', letterSpacing: 1, textTransform: 'uppercase', fontWeight: 700 }}>● One last step</div>
               <div style={{ fontFamily: FONT_BODY, fontSize: 14, color: PM.night, fontWeight: 700 }}>
                 Lemonade {enrolledPlan.name} · ${enrolledPlan.price}/mo
               </div>
             </div>
-            <button onClick={cancelPlan} style={{
-              padding: '6px 12px', borderRadius: 13,
-              background: 'transparent', color: PM.inkSoft, border: `1px solid ${PM.line}`,
-              cursor: 'pointer', fontFamily: FONT_BODY, fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap',
-            }}>Cancel plan</button>
           </div>
         )}
 
@@ -424,8 +407,15 @@ function InsuranceScreen({ goto, onBack, embedded = false }) {
           <strong>Good to know:</strong> Pre-existing conditions are excluded — enroll before the first visit. Enroll today and Poppy's first vet visit is covered.
         </div>
 
-        <div style={{ marginTop: 18 }}>
+        <div style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 8 }}>
           <PMButton variant="primary" onClick={() => { window.__pmPlan = plan; goto('checkout'); }}>Continue with {plans.find(x => x.id === plan).name} →</PMButton>
+          {!embedded && (
+            <button onClick={() => { window.__pmPlan = null; goto('checkout'); }} style={{
+              width: '100%', height: 44, borderRadius: 22,
+              background: 'transparent', color: PM.inkSoft, border: `1px solid ${PM.line}`,
+              cursor: 'pointer', fontFamily: FONT_BODY, fontSize: 13, fontWeight: 500,
+            }}>Skip — pay full price today</button>
+          )}
         </div>
       </div>
     </Outer>
@@ -527,8 +517,8 @@ function PetCareScreen({ goto, tab, setTab }) {
   const fee = useExtraFee();
 
   const subTabs = [
-    ['insurance', 'Insurance'],
     ['findVet',   'Find a vet'],
+    ['insurance', 'Insurance'],
     ['claims',    'Claims'],
   ];
 

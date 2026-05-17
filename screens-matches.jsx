@@ -348,12 +348,16 @@ function ChatRow({ who, sub, preview, age, unread, petKey, onClick }) {
 function ChatThreadScreen({ goto, params }) {
   const pet = PETS[params.pet || 'poppy'];
   const Art = pet.Art;
+  // Sync the booking bubble's time with the shelter side: when the shelter
+  // sends a meeting time via the cross-end demo, the same time appears here.
+  const demoState = (typeof useDemoState === 'function') ? useDemoState() : null;
+  const proposedTime = (demoState && demoState.meetingTime) || 'Sat Apr 19 · 2:00 PM';
   const messages = [
     { from: 'them', text: `Hi Sarah! Thanks for your interest in ${pet.name}. We reviewed your pre-application and we love what we see.`, time: '10:14' },
     { from: 'them', text: `${pet.name} is great with kids and currently up-to-date on shots. Would you like to come meet her this weekend?`, time: '10:14' },
     { from: 'me',   text: `Yes please! Saturday afternoon works for us.`, time: '10:32' },
-    { from: 'them', text: `Great — we'd love to meet you Saturday 2pm at the shelter. Bring the family! 🌿`, time: '11:02' },
-    { from: 'them', kind: 'booking', booking: { when: 'Sat Apr 19 · 2:00 PM', where: 'Willow Creek Rescue · 1842 NE 23rd' }, time: '11:02' },
+    { from: 'them', text: `Great — we'd love to meet you ${proposedTime.split(' · ')[0]} ${proposedTime.split(' · ')[1] || ''} at the shelter. Bring the family! 🌿`, time: '11:02' },
+    { from: 'them', kind: 'booking', booking: { when: proposedTime, where: 'Willow Creek Rescue · 1842 NE 23rd' }, time: '11:02' },
   ];
   return (
     <div style={{ position: 'absolute', inset: 0, background: PM.cream, display: 'flex', flexDirection: 'column' }}>
@@ -439,6 +443,9 @@ function Bubble({ from, text, time }) {
 function BookingBubble({ booking }) {
   const [status, setStatus] = React.useState('pending'); // pending | confirmed | rescheduling
   const [when, setWhen] = React.useState(booking.when);
+  // Keep in sync if the parent passes a new proposed time (e.g. shelter sends
+  // a different slot via the cross-end demo).
+  React.useEffect(() => { setWhen(booking.when); }, [booking.when]);
   const slots = ['Sat Apr 12 · 2:00 PM', 'Sun Apr 13 · 11:00 AM', 'Wed Apr 16 · 5:30 PM', 'Sat Apr 19 · 2:00 PM'];
 
   return (
