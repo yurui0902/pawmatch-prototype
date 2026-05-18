@@ -1,4 +1,6 @@
 assets/splash-hero.b64.txt
+assets/splash-hero.previous.jpg
+.gitignore.tmp
 uploads/
 .DS_Store
 *.pyc
