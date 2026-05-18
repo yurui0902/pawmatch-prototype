@@ -1558,7 +1558,13 @@ function OnboardingScreen({ onContinue, onSkip }) {
               selected={petTypes.includes('cats')}
               onClick={() => toggle(petTypes, setPetTypes, 'cats')} accent={PM.gold}/>
             <OBCardChoice
-              icon={<div style={{ fontFamily: FONT_DISPLAY, fontSize: 30, color: PM.ink, lineHeight: 1, fontStyle: 'italic' }}>cats<br/>+ dogs</div>}
+              icon={
+                <div style={{
+                  width: 70, height: 70, borderRadius: '50%', overflow: 'hidden',
+                  background: `url("${window.__PAWMATCH_SPLASH_HERO__ || 'assets/splash-hero.jpg'}") 50% 58% / 165% auto no-repeat #FFFFFF`,
+                  boxShadow: '0 4px 10px rgba(20,20,40,0.10)',
+                }}/>
+              }
               label="Both cats and dogs"
               selected={petTypes.includes('both')}
               onClick={() => toggle(petTypes, setPetTypes, 'both')} accent={PM.violet}
