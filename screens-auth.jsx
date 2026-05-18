@@ -286,20 +286,13 @@ function OnboardingScreen({ onContinue, onSkip }) {
       <div style={{ flex: 1, overflow: 'auto', padding: '24px 20px 24px' }}>
         <OBSection label="Pet type" hint="Pick one or more">
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <OBCardChoice label="Dogs"
-              bgImage={(window.__pmPetPhotos && window.__pmPetPhotos.poppy) || 'assets/pets/poppy.jpg'}
-              bgPosition="center 32%"
+            <OBCardChoice label="Dogs" emoji="🐶"
               selected={petTypes.includes('dogs')}
               onClick={() => toggle(petTypes, setPetTypes, 'dogs')} accent={PM.coral}/>
-            <OBCardChoice label="Cats"
-              bgImage={(window.__pmPetPhotos && window.__pmPetPhotos.may) || 'assets/pets/may.jpg'}
-              bgPosition="center 35%"
+            <OBCardChoice label="Cats" emoji="🐱"
               selected={petTypes.includes('cats')}
               onClick={() => toggle(petTypes, setPetTypes, 'cats')} accent={PM.gold}/>
-            <OBCardChoice label="Both cats and dogs"
-              bgImage={window.__PAWMATCH_SPLASH_HERO__ || 'assets/splash-hero.jpg'}
-              bgPosition="center 62%"
-              bgSize="120% auto"
+            <OBCardChoice label="Both cats and dogs" emoji="🐶 🐱"
               selected={petTypes.includes('both')}
               onClick={() => toggle(petTypes, setPetTypes, 'both')} accent={PM.violet}
               wide
@@ -343,41 +336,37 @@ function OBSection({ label, hint, children }) {
   );
 }
 
-function OBCardChoice({ label, selected, onClick, accent, wide, bgImage, bgPosition = 'center', bgSize = 'cover' }) {
+function OBCardChoice({ label, emoji, selected, onClick, accent, wide }) {
   return (
     <button onClick={onClick} style={{
       gridColumn: wide ? '1 / -1' : 'auto',
-      height: 140, borderRadius: 18,
-      background: bgImage ? `url("${bgImage}") ${bgPosition} / ${bgSize} no-repeat #F3F3F3` : (selected ? PM.night : PM.white),
-      border: selected ? `3px solid ${accent}` : `1px solid ${PM.line}`,
-      cursor: 'pointer', padding: 0,
-      display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'flex-start',
+      height: 130, borderRadius: 18,
+      background: selected ? PM.night : PM.white,
+      color: selected ? PM.cream : PM.night,
+      border: selected ? 'none' : `1px solid ${PM.line}`,
+      cursor: 'pointer', padding: 14,
+      display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
       transition: 'all 0.2s', position: 'relative', overflow: 'hidden',
-      boxShadow: selected ? `0 10px 28px ${accent}55` : '0 1px 3px rgba(20,20,40,0.06)',
+      boxShadow: selected ? `0 8px 24px ${accent}55` : '0 1px 3px rgba(20,20,40,0.06)',
     }}>
-      {/* gradient overlay so the label reads against any photo */}
-      {bgImage && (
-        <div style={{
-          position: 'absolute', inset: 0, pointerEvents: 'none',
-          background: 'linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(0,0,0,0.62) 100%)',
-        }}/>
-      )}
       {selected && (
         <div style={{
-          position: 'absolute', top: 10, right: 10, zIndex: 2,
-          width: 28, height: 28, borderRadius: 14, background: accent,
+          position: 'absolute', top: 10, right: 10,
+          width: 24, height: 24, borderRadius: 12, background: accent,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           boxShadow: `0 4px 10px ${accent}99`,
         }}>
-          <svg width="13" height="13" viewBox="0 0 11 11"><path d="M2 6 L 4.5 8.5 L 9 3" stroke="#FFF" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          <svg width="11" height="11" viewBox="0 0 11 11"><path d="M2 6 L 4.5 8.5 L 9 3" stroke="#FFF" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
         </div>
       )}
       <div style={{
-        position: 'relative', zIndex: 1,
-        padding: '14px 16px',
-        fontFamily: FONT_BODY, fontSize: 16, fontWeight: 700,
-        color: bgImage ? '#FFF' : (selected ? PM.cream : PM.night),
-        textShadow: bgImage ? '0 2px 8px rgba(0,0,0,0.55)' : 'none',
+        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: wide ? 44 : 40,
+        lineHeight: 1,
+        filter: selected ? 'none' : 'none',
+      }}>{emoji}</div>
+      <div style={{
+        fontFamily: FONT_BODY, fontSize: 15, fontWeight: 700,
         letterSpacing: 0.1,
       }}>{label}</div>
     </button>

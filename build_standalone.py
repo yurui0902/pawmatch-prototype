@@ -13,10 +13,12 @@ import re, pathlib, base64, mimetypes
 HERE = pathlib.Path(__file__).resolve().parent
 
 SHELLS = [
-    (HERE / "PawMatch.html",          HERE / "PawMatch-standalone.html"),
-    (HERE / "PawMatch-Lato.html",     HERE / "PawMatch-Lato-standalone.html"),
-    (HERE / "PawMatch-Shelter.html",  HERE / "PawMatch-Shelter-standalone.html"),
-    (HERE / "PawMatch-Vet.html",      HERE / "PawMatch-Vet-standalone.html"),
+    (HERE / "PawMatch.html",                 HERE / "PawMatch-standalone.html"),
+    (HERE / "PawMatch-Lato.html",            HERE / "PawMatch-Lato-standalone.html"),
+    (HERE / "PawMatch-Shelter.html",         HERE / "PawMatch-Shelter-standalone.html"),
+    (HERE / "PawMatch-Shelter-Lato.html",    HERE / "PawMatch-Shelter-Lato-standalone.html"),
+    (HERE / "PawMatch-Vet.html",             HERE / "PawMatch-Vet-standalone.html"),
+    (HERE / "PawMatch-Vet-Lato.html",        HERE / "PawMatch-Vet-Lato-standalone.html"),
 ]
 
 JSX_PAT = re.compile(
