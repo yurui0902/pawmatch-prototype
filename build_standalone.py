@@ -14,6 +14,7 @@ HERE = pathlib.Path(__file__).resolve().parent
 
 SHELLS = [
     (HERE / "PawMatch.html",          HERE / "PawMatch-standalone.html"),
+    (HERE / "PawMatch-Lato.html",     HERE / "PawMatch-Lato-standalone.html"),
     (HERE / "PawMatch-Shelter.html",  HERE / "PawMatch-Shelter-standalone.html"),
     (HERE / "PawMatch-Vet.html",      HERE / "PawMatch-Vet-standalone.html"),
 ]

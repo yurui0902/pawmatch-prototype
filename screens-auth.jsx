@@ -4,6 +4,20 @@
 // standalone HTML works from file:// without needing the assets/ folder.
 const SPLASH_HERO_DATA_URL = window.__PAWMATCH_SPLASH_HERO__ || 'assets/splash-hero.jpg';
 
+// Tiny photo helper for onboarding cards — falls back to nothing if no photo.
+function PhotoCircle({ src, size = 70 }) {
+  if (!src) return null;
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: '50%', overflow: 'hidden',
+      background: '#F3F3F3',
+      boxShadow: '0 4px 10px rgba(20,20,40,0.10)',
+    }}>
+      <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}/>
+    </div>
+  );
+}
+
 // ─── Splash / Welcome ──────────────────────────────────────
 
 function SplashScreen({ onContinue }) {
@@ -272,10 +286,10 @@ function OnboardingScreen({ onContinue, onSkip }) {
       <div style={{ flex: 1, overflow: 'auto', padding: '24px 20px 24px' }}>
         <OBSection label="Pet type" hint="Pick one or more">
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <OBCardChoice icon={<Pet_Poppy size={70}/>} label="Dogs"
+            <OBCardChoice icon={<PhotoCircle key="dog" src={window.__pmPetPhotos && window.__pmPetPhotos.poppy} size={70}/>} label="Dogs"
               selected={petTypes.includes('dogs')}
               onClick={() => toggle(petTypes, setPetTypes, 'dogs')} accent={PM.coral}/>
-            <OBCardChoice icon={<Pet_Miso  size={70}/>} label="Cats"
+            <OBCardChoice icon={<PhotoCircle key="cat" src={window.__pmPetPhotos && window.__pmPetPhotos.may} size={70}/>} label="Cats"
               selected={petTypes.includes('cats')}
               onClick={() => toggle(petTypes, setPetTypes, 'cats')} accent={PM.gold}/>
             <OBCardChoice

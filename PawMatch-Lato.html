@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>PawMatch — Adopter · Lato variant</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;0,900;1,400;1,700&display=swap" rel="stylesheet"/>
+
+  <style>
+    /* Lato override variant — every text element forced to Lato so we can
+       compare how the UI reads with a single font family.  Weight, color,
+       size and italics are preserved; only the family is swapped. */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      font-family: 'Lato', -apple-system, system-ui, sans-serif !important;
+    }
+    html, body {
+      margin: 0; padding: 0; height: 100%;
+      background: #E8E0D0;
+      color: #1F1F3A;
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+    }
+    body {
+      background: #F2F2F2;
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+    }
+
+    button { font-family: inherit; }
+    h1, h2, h3, p { margin: 0; }
+
+    /* stage scales the device to fit */
+    .stage {
+      transform-origin: center center;
+      transition: transform 0.2s;
+    }
+
+
+
+    /* hide scrollbars in webkit */
+    *::-webkit-scrollbar { width: 0; height: 0; }
+
+    #root { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <template id="__bundler_thumbnail">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+      <defs>
+        <radialGradient id="bg" cx="50%" cy="40%" r="70%">
+          <stop offset="0%" stop-color="#2B2454"/>
+          <stop offset="100%" stop-color="#0A0B22"/>
+        </radialGradient>
+        <radialGradient id="paw" cx="40%" cy="32%" r="78%">
+          <stop offset="0%" stop-color="#FFE4F0"/>
+          <stop offset="55%" stop-color="#FF7AB8"/>
+          <stop offset="100%" stop-color="#E8388F"/>
+        </radialGradient>
+      </defs>
+      <rect width="300" height="300" fill="url(#bg)"/>
+      <g transform="translate(15,30)">
+        <ellipse cx="50" cy="105" rx="20" ry="26" fill="url(#paw)"/>
+        <ellipse cx="100" cy="78" rx="20" ry="26" fill="url(#paw)"/>
+        <ellipse cx="170" cy="78" rx="20" ry="26" fill="url(#paw)"/>
+        <ellipse cx="220" cy="105" rx="20" ry="26" fill="url(#paw)"/>
+        <path d="M135 230 C 80 230 50 195 50 158 C 50 130 80 110 135 110 C 190 110 220 130 220 158 C 220 195 190 230 135 230 Z" fill="url(#paw)"/>
+      </g>
+    </svg>
+  </template>
+
+  <script>
+    /* Dev-mode asset paths — build_standalone.py overrides these with data URLs. */
+    window.__pmPetPhotos = {
+      poppy:  'assets/pets/poppy.jpg',
+      hope:   'assets/pets/hope.jpg',
+      bear:   'assets/pets/bear.jpg',
+      satoru: 'assets/pets/satoru.jpg',
+      may:    'assets/pets/may.jpg',
+      poppy2: 'assets/pets/poppy2.jpg',
+    };
+  </script>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script type="text/babel" src="ios-frame.jsx"></script>
+  <script type="text/babel" src="pet-art.jsx"></script>
+  <script type="text/babel" src="ui.jsx"></script>
+  <script type="text/babel" src="screens-auth.jsx"></script>
+  <script type="text/babel" src="screens-swipe.jsx"></script>
+  <script type="text/babel" src="screens-matches.jsx"></script>
+  <script type="text/babel" src="screens-stubs.jsx"></script>
+  <script type="text/babel" src="app.jsx"></script>
+
+  <!-- Shelter cross-end demo dependencies -->
+  <script type="text/babel" src="shelter-data.jsx"></script>
+  <script type="text/babel" src="app-shelter.jsx"></script>
+  <script type="text/babel" src="screens-shelter-forms.jsx"></script>
+  <script type="text/babel" src="screens-shelter-misc.jsx"></script>
+  <script type="text/babel" src="shelter-demo.jsx"></script>
+
+  <script type="text/babel">
+    // Stage scaling — fit one or two device frames into the viewport while
+    // keeping native pixels. When the shelter demo is toggled on, render a
+    // second iOS frame to the right showing the shelter Forms view.
+    function Stage() {
+      const demoState = (typeof useDemoState === 'function') ? useDemoState() : null;
+      const showShelter = !!(demoState && demoState.shelterVisible);
+      const [scale, setScale] = React.useState(1);
+      React.useEffect(() => {
+        const onResize = () => {
+          const phoneW = 402, H = 874, gap = 28;
+          const W = showShelter ? phoneW * 2 + gap : phoneW;
+          const vw = window.innerWidth - 40;
+          const vh = window.innerHeight - 40;
+          setScale(Math.min(vw / W, vh / H, 1.05));
+        };
+        onResize();
+        window.addEventListener('resize', onResize);
+        return () => window.removeEventListener('resize', onResize);
+      }, [showShelter]);
+
+      return (
+        <div className="stage" style={{
+          transform: `scale(${scale})`,
+          display: 'flex', alignItems: 'center', gap: 28,
+        }}>
+          <IOSDevice width={402} height={874}>
+            <div style={{ position: 'absolute', inset: 0 }}>
+              <App/>
+            </div>
+          </IOSDevice>
+          {showShelter && (
+            <div style={{
+              position: 'relative',
+              animation: 'pm-shelter-slide-in 0.45s cubic-bezier(0.32, 1.4, 0.64, 1) both',
+            }}>
+              <style>{`
+                @keyframes pm-shelter-slide-in {
+                  from { transform: translateX(-40px) scale(0.94); opacity: 0; }
+                  to   { transform: translateX(0)     scale(1);    opacity: 1; }
+                }
+              `}</style>
+              {/* "Shelter view" label above the second phone */}
+              <div style={{
+                position: 'absolute', top: -36, left: '50%', transform: 'translateX(-50%)',
+                padding: '6px 14px', borderRadius: 14, background: '#0034FF', color: '#FFF',
+                fontFamily: 'Geist Mono, monospace', fontSize: 11, fontWeight: 700,
+                letterSpacing: 1.4, textTransform: 'uppercase', whiteSpace: 'nowrap',
+                boxShadow: '0 6px 16px rgba(0,52,255,0.34)',
+              }}>
+                <span style={{ marginRight: 6 }}>●</span> Shelter view · live
+              </div>
+              <IOSDevice width={402} height={874}>
+                <div style={{ position: 'absolute', inset: 0 }}>
+                  <ShelterDemoView/>
+                </div>
+              </IOSDevice>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<Stage/>);
+  </script>
+</body>
+</html>

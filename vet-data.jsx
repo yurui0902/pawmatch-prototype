@@ -146,18 +146,22 @@ const CLAIMS = [
     id: 'LEM-2026-04-16-001', petName: 'Poppy', owner: 'Sarah Chen',
     provider: 'Lemonade Pet · Plus', amount: 265.00, copay: 25.00, payout: 240.00,
     visit: 'Wed Apr 16, 2026 · Wellness',
-    submittedAge: 'Just now', status: 'Draft', preExisting: false,
+    submittedAge: 'Just now', status: 'Vet-approved', preExisting: false,
+    customerContacted: false,
+    vetSigner: 'Dr. Patel',
   },
   {
     id: 'LEM-2026-04-12-014', petName: 'Mochi', owner: 'David Liu',
     provider: 'Trupanion · Premium', amount: 142.00, copay: 30.00, payout: 112.00,
     visit: 'Sat Apr 12, 2026 · Vaccines',
-    submittedAge: '4d ago', status: 'Pending',
+    submittedAge: '4d ago', status: 'Pending', customerContacted: true,
+    vetSigner: 'Dr. Patel',
     timeline: [
-      { label: 'Submitted',         when: '4d ago',  done: true },
-      { label: 'Under review',      when: '2d ago',  done: true },
-      { label: 'Approval pending',  when: 'expected today', done: false },
-      { label: 'Payout',            when: '~3 business days', done: false },
+      { label: 'Signed by Dr. Patel',     when: '4d ago',           done: true },
+      { label: 'Customer confirmed',      when: '3d ago',           done: true },
+      { label: 'Submitted to Lemonade',   when: '3d ago',           done: true },
+      { label: 'Under review',            when: '1d ago',           done: true },
+      { label: 'Payout',                  when: '~2 business days', done: false },
     ],
   },
   {
@@ -176,10 +180,11 @@ const CLAIMS = [
 ];
 
 const CLAIM_STAGES = [
-  { key: 'Draft',    color: '#FFD400' },
-  { key: 'Pending',  color: '#0034FF' },
-  { key: 'Approved', color: '#00C46A' },
-  { key: 'Denied',   color: '#FF5677' },
+  { key: 'Draft',        color: '#FFD400' },   // pre-vet-signature
+  { key: 'Vet-approved', color: '#FF9F00' },   // signed by vet, awaiting front desk
+  { key: 'Pending',      color: '#0034FF' },   // submitted to Lemonade
+  { key: 'Approved',     color: '#00C46A' },   // paid out
+  { key: 'Denied',       color: '#FF5677' },
 ];
 
 // Documents — file storage

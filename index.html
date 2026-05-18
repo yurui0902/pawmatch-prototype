@@ -30,6 +30,9 @@
     .card:hover { transform: translateY(-3px); box-shadow: 0 4px 8px rgba(20,20,40,0.06), 0 18px 40px rgba(20,20,40,0.10); }
     .card.shelter { border-top-color: #0034FF; }
     .card.vet     { border-top-color: #00C46A; }
+    .card.lato    { border-top-color: #1F1F3A; }
+    .card.lato .open { background: #1F1F3A; }
+    .card.lato .badge { color: #1F1F3A; }
     .badge { font-family: 'Geist Mono', monospace; font-size: 10px; letter-spacing: 1.4px;
       text-transform: uppercase; color: #FF0083; font-weight: 700; display: inline-flex;
       align-items: center; gap: 6px; }
@@ -89,6 +92,16 @@
           in one tap. Track every appointment, note, and claim in one place.
         </p>
         <span class="open">Open vet app →</span>
+      </a>
+
+      <a class="card lato" href="PawMatch-Lato-standalone.html">
+        <span class="badge">Type study</span>
+        <h2>Adopter app<br/><em>in Lato</em>.</h2>
+        <p class="desc">
+          Same screens, same logic, every font forced to Lato.  Quick way to
+          compare how the UI reads with a single neutral type family.
+        </p>
+        <span class="open">Open Lato variant →</span>
       </a>
     </div>
 

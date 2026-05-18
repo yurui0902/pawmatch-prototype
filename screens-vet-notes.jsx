@@ -17,7 +17,7 @@ function VetNotesScreen({ goto, tab, setTab }) {
 
   return (
     <div style={{ position: 'absolute', inset: 0, background: PM.cream, display: 'flex', flexDirection: 'column' }}>
-      <TopBar title="AI Notes" large subtitle={`${AI_NOTES.length} records · powered by Lemonade transcription`}
+      <TopBar title="Notetaker" large subtitle={`${AI_NOTES.length} records · sign-off hands the claim to front desk`}
         right={
           <button onClick={() => goto('noteNew')} style={{
             width: 36, height: 36, borderRadius: 18, background: PM.coral, color: '#FFF',
@@ -420,7 +420,7 @@ function VetNoteReviewScreen({ note, onBack, onSign }) {
           background: PM.coral, color: '#FFF', border: 'none',
           fontFamily: FONT_BODY, fontSize: 14, fontWeight: 600, cursor: 'pointer',
           boxShadow: '0 6px 16px rgba(255,0,131,0.32)',
-        }}>Approve & sign · file claim →</button>
+        }}>Approve & send to front desk →</button>
       </div>
     </div>
   );

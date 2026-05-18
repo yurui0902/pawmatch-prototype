@@ -1,14 +1,15 @@
 // screens-vet-claims.jsx — Claims index + Preview + Pending Timeline.
 
 const CLAIM_BADGE = {
-  Draft:    { bg: '#FFF1D6', fg: '#9A6A00' },
-  Pending:  { bg: '#D6E8FF', fg: '#0034FF' },
-  Approved: { bg: '#E6F8EF', fg: '#1E8A5A' },
-  Denied:   { bg: '#FFE0E6', fg: '#B5103E' },
+  Draft:          { bg: '#FFF1D6', fg: '#9A6A00' },
+  'Vet-approved': { bg: '#FFE7CF', fg: '#8A4F00' },
+  Pending:        { bg: '#D6E8FF', fg: '#0034FF' },
+  Approved:       { bg: '#E6F8EF', fg: '#1E8A5A' },
+  Denied:         { bg: '#FFE0E6', fg: '#B5103E' },
 };
 
 function VetClaimsScreen({ goto, tab, setTab }) {
-  const filters = ['All', 'Draft', 'Pending', 'Approved', 'Denied'];
+  const filters = ['All', 'Vet-approved', 'Pending', 'Approved', 'Denied'];
   const [seg, setSeg] = React.useState('All');
   const counts = filters.reduce((a, f) => {
     a[f] = f === 'All' ? CLAIMS.length : CLAIMS.filter(c => c.status === f).length;
@@ -18,7 +19,7 @@ function VetClaimsScreen({ goto, tab, setTab }) {
 
   return (
     <div style={{ position: 'absolute', inset: 0, background: PM.cream, display: 'flex', flexDirection: 'column' }}>
-      <TopBar title="Claims" large subtitle={`${CLAIMS.length} total · $${CLAIMS.reduce((a, c) => a + c.payout, 0).toLocaleString()} paid out YTD`}/>
+      <TopBar title="Claims" large subtitle={`Front-desk queue · ${(CLAIMS).filter(c => c.status === 'Vet-approved').length} awaiting submission · $${CLAIMS.reduce((a, c) => a + c.payout, 0).toLocaleString()} paid YTD`}/>
 
       <div style={{ padding: '0 20px 8px' }}>
         <div style={{ display: 'flex', gap: 6, padding: 4, background: PM.white, borderRadius: 16, border: `1px solid ${PM.line}`, overflowX: 'auto' }}>
@@ -81,11 +82,18 @@ function ClaimRow({ claim, onClick }) {
 // ─── Claim preview (draft) ─────────────────────────────────
 
 function VetClaimPreviewScreen({ claim, onBack, goto }) {
-  const [signed, setSigned] = React.useState(false);
+  // Two-stage front-desk workflow.  Vet has already signed; the front desk
+  // chats with the customer then submits to Lemonade.
+  const [contacted, setContacted] = React.useState(!!(claim && claim.customerContacted));
+  const [submitted, setSubmitted] = React.useState(false);
   if (!claim) return <div style={{ position: 'absolute', inset: 0, background: PM.cream, padding: 40 }}>Not found. <button onClick={onBack}>Back</button></div>;
-  const b = CLAIM_BADGE[claim.status] || CLAIM_BADGE.Draft;
+  // While we're still in the front-desk hand-off, the badge reflects local
+  // state instead of the seed data.
+  const liveStatus = submitted ? 'Pending' : claim.status;
+  const b = CLAIM_BADGE[liveStatus] || CLAIM_BADGE.Draft;
+  const isVetApproved = !submitted && (claim.status === 'Vet-approved' || claim.status === 'Draft');
 
-  // For Poppy (the demo Draft) — itemized from SOAP plan
+  // For Poppy (the demo claim) — itemized from SOAP plan
   const items = claim.petName === 'Poppy' ? (SOAP_DRAFT.plan || []) : [
     { line: claim.visit.split('·')[1] ? claim.visit.split('·')[1].trim() : 'Service', charge: claim.amount },
   ];
@@ -97,16 +105,46 @@ function VetClaimPreviewScreen({ claim, onBack, goto }) {
         right={<div style={{
           padding: '4px 10px', borderRadius: 11, background: b.bg, color: b.fg,
           fontFamily: FONT_MONO, fontSize: 10, letterSpacing: 0.6, textTransform: 'uppercase', fontWeight: 700,
-        }}>{claim.status}</div>}
+        }}>{liveStatus}</div>}
       />
 
       <div style={{ flex: 1, overflow: 'auto', padding: '4px 20px 120px' }}>
         <h1 style={{ margin: '6px 0 4px', fontFamily: FONT_DISPLAY, fontSize: 30, fontWeight: 400, color: PM.night, letterSpacing: -0.6, lineHeight: 1.05 }}>
           Claim for <em style={{ color: PM.coral }}>{claim.petName}</em>
         </h1>
-        <div style={{ fontFamily: FONT_BODY, fontSize: 13, color: PM.inkSoft, marginBottom: 18 }}>
+        <div style={{ fontFamily: FONT_BODY, fontSize: 13, color: PM.inkSoft, marginBottom: 14 }}>
           {claim.visit} · {claim.provider}
         </div>
+
+        {/* Vet-signed handoff banner — front desk needs to act */}
+        {isVetApproved && (
+          <div style={{
+            padding: 14, borderRadius: 16, marginBottom: 14,
+            background: '#FFE7CF', borderLeft: `3px solid #FF9F00`,
+          }}>
+            <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: '#8A4F00', letterSpacing: 1.2, textTransform: 'uppercase', fontWeight: 700 }}>
+              ✓ Signed by {claim.vetSigner || CLINIC.lead} · Awaiting front desk
+            </div>
+            <div style={{ marginTop: 6, fontFamily: FONT_BODY, fontSize: 13, color: PM.ink, lineHeight: 1.5 }}>
+              <strong style={{ color: PM.night }}>Front desk:</strong> confirm the visit summary with {claim.owner},
+              then submit to {claim.provider.split('·')[0].trim()}.
+            </div>
+          </div>
+        )}
+
+        {submitted && (
+          <div style={{
+            padding: 14, borderRadius: 16, marginBottom: 14,
+            background: '#E6F8EF', borderLeft: `3px solid ${PM.mint}`,
+          }}>
+            <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: '#1E6B4D', letterSpacing: 1, textTransform: 'uppercase', fontWeight: 700 }}>
+              ● Submitted to Lemonade
+            </div>
+            <div style={{ marginTop: 4, fontFamily: FONT_BODY, fontSize: 13, color: PM.ink }}>
+              Wellness claims typically pay out in 24–48 hours. Track status in <span style={{ color: PM.coral, fontWeight: 600, cursor: 'pointer' }} onClick={() => goto('claimTimeline', { id: claim.id })}>Claims</span>.
+            </div>
+          </div>
+        )}
 
         {!claim.preExisting && (
           <div style={{
@@ -153,18 +191,28 @@ function VetClaimPreviewScreen({ claim, onBack, goto }) {
 
         <Section title="Signatures">
           <SigRow label="Policyholder" name={claim.owner}/>
-          <SigRow label="Vet"          name={CLINIC.lead} last/>
+          <SigRow label="Vet"          name={`${claim.vetSigner || CLINIC.lead} · ✓ signed`} last vetSigned/>
         </Section>
 
-        {signed && (
-          <div style={{
-            marginTop: 16, padding: 14, borderRadius: 16,
-            background: '#E6F8EF', borderLeft: `3px solid ${PM.mint}`,
-            fontFamily: FONT_BODY, fontSize: 13, color: PM.ink,
-          }}>
-            <strong>Submitted.</strong> {claim.provider} typically reviews wellness claims in 24–48 hours.
-            You can track status in <span style={{ color: PM.coral, fontWeight: 600, cursor: 'pointer' }} onClick={() => goto('claimTimeline', { id: claim.id })}>the claims list</span>.
-          </div>
+        {/* Front desk workflow checklist — only visible during the hand-off */}
+        {isVetApproved && (
+          <Section title="Front desk checklist">
+            <FrontDeskStep
+              n="1" label="Confirm visit summary with customer"
+              hint={`Send ${claim.owner} the itemized charges via chat, get a thumbs-up.`}
+              done={contacted}
+              cta={contacted ? null : 'Chat with customer'}
+              onClick={() => setContacted(true)}
+            />
+            <FrontDeskStep
+              n="2" label={`Submit to ${claim.provider.split('·')[0].trim()}`}
+              hint="Verifies in-network, pre-existing flags, and itemized codes."
+              done={false}
+              disabled={!contacted}
+              cta={contacted ? 'Ready · use button below' : 'Confirm with customer first'}
+              last
+            />
+          </Section>
         )}
       </div>
 
@@ -172,31 +220,104 @@ function VetClaimPreviewScreen({ claim, onBack, goto }) {
         position: 'absolute', left: 0, right: 0, bottom: 0,
         padding: '12px 20px 28px', background: '#FFFFFFF2',
         borderTop: `1px solid ${PM.line}`,
+        display: 'flex', gap: 8,
       }}>
-        <button onClick={() => setSigned(true)} disabled={signed} style={{
-          width: '100%', height: 54, borderRadius: 27,
-          background: signed ? '#FFB8DA' : PM.coral, color: '#FFF', border: 'none',
-          fontFamily: FONT_BODY, fontSize: 16, fontWeight: 600,
-          cursor: signed ? 'not-allowed' : 'pointer',
-          boxShadow: signed ? 'none' : '0 6px 18px rgba(255,0,131,0.4)',
-        }}>{signed ? 'Submitted ✓' : 'Sign & submit'}</button>
+        {isVetApproved ? (
+          <>
+            <button onClick={() => setContacted(true)} disabled={contacted} style={{
+              flex: 1, height: 54, borderRadius: 27,
+              background: contacted ? '#E6F8EF' : 'transparent',
+              color: contacted ? '#1E6B4D' : PM.night,
+              border: contacted ? 'none' : `1.5px solid ${PM.ink}`,
+              fontFamily: FONT_BODY, fontSize: 14, fontWeight: 600, cursor: contacted ? 'default' : 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            }}>
+              {contacted ? '✓ Customer confirmed' : 'Chat with customer'}
+            </button>
+            <button
+              onClick={() => setSubmitted(true)}
+              disabled={!contacted || submitted}
+              style={{
+                flex: 1.4, height: 54, borderRadius: 27,
+                background: (!contacted || submitted) ? '#FFB8DA' : PM.coral,
+                color: '#FFF', border: 'none',
+                fontFamily: FONT_BODY, fontSize: 14, fontWeight: 600,
+                cursor: (!contacted || submitted) ? 'not-allowed' : 'pointer',
+                boxShadow: (!contacted || submitted) ? 'none' : '0 6px 18px rgba(255,0,131,0.4)',
+              }}>
+              {submitted ? 'Submitted ✓' : `Submit to ${claim.provider.split('·')[0].trim()} →`}
+            </button>
+          </>
+        ) : (
+          <button onClick={() => goto('claimTimeline', { id: claim.id })} style={{
+            width: '100%', height: 54, borderRadius: 27,
+            background: PM.night, color: PM.cream, border: 'none',
+            fontFamily: FONT_BODY, fontSize: 14, fontWeight: 600, cursor: 'pointer',
+          }}>View status →</button>
+        )}
       </div>
     </div>
   );
 }
 
-function SigRow({ label, name, last }) {
+function SigRow({ label, name, last, vetSigned }) {
   return (
     <div style={{ padding: '8px 0', borderBottom: last ? 'none' : `1px solid ${PM.lineSoft}` }}>
       <div style={{ fontFamily: FONT_MONO, fontSize: 9, color: PM.inkSoft, letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 4 }}>{label}</div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{ fontFamily: FONT_BODY, fontSize: 13, color: PM.night, fontWeight: 600 }}>{name}</span>
-        <div style={{
-          minWidth: 96, height: 28, borderRadius: 6,
-          border: `1px dashed ${PM.line}`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontFamily: FONT_MONO, fontSize: 10, color: PM.inkFaint, letterSpacing: 0.4,
-        }}>tap to sign</div>
+        {vetSigned ? (
+          <div style={{
+            minWidth: 96, height: 28, padding: '0 10px', borderRadius: 6,
+            background: '#E6F8EF', color: '#1E6B4D',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+            fontFamily: FONT_BODY, fontSize: 11, fontWeight: 700,
+          }}>signed</div>
+        ) : (
+          <div style={{
+            minWidth: 96, height: 28, borderRadius: 6,
+            border: `1px dashed ${PM.line}`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontFamily: FONT_MONO, fontSize: 10, color: PM.inkFaint, letterSpacing: 0.4,
+          }}>tap to sign</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function FrontDeskStep({ n, label, hint, done, disabled, cta, onClick, last }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'flex-start', gap: 12,
+      padding: '10px 0', borderBottom: last ? 'none' : `1px solid ${PM.lineSoft}`,
+    }}>
+      <div style={{
+        width: 26, height: 26, borderRadius: 13, flexShrink: 0,
+        background: done ? PM.mint : disabled ? PM.creamDark : PM.night,
+        color: '#FFF',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontFamily: FONT_DISPLAY, fontSize: 12,
+      }}>{done ? '✓' : n}</div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontFamily: FONT_BODY, fontSize: 13, color: done ? PM.inkSoft : PM.night, fontWeight: 600, textDecoration: done ? 'line-through' : 'none' }}>
+          {label}
+        </div>
+        <div style={{ marginTop: 2, fontFamily: FONT_BODY, fontSize: 11, color: PM.inkSoft, lineHeight: 1.45 }}>{hint}</div>
+        {cta && !done && (
+          <div style={{ marginTop: 6 }}>
+            {onClick ? (
+              <button onClick={onClick} disabled={disabled} style={{
+                padding: '6px 12px', borderRadius: 13,
+                background: disabled ? PM.creamDark : PM.night, color: disabled ? PM.inkFaint : '#FFF',
+                border: 'none', cursor: disabled ? 'not-allowed' : 'pointer',
+                fontFamily: FONT_BODY, fontSize: 11, fontWeight: 600,
+              }}>{cta}</button>
+            ) : (
+              <span style={{ fontFamily: FONT_MONO, fontSize: 10, color: PM.inkFaint, letterSpacing: 0.4 }}>{cta}</span>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -4,7 +4,7 @@ function VetTabBar({ active, onChange }) {
   const tabs = [
     { id: 'home',     label: 'Home',     icon: 'home'  },
     { id: 'calendar', label: 'Calendar', icon: 'cal'   },
-    { id: 'record',   label: 'Record',   icon: 'rec'   },
+    { id: 'record',   label: 'Notetaker', icon: 'rec'  },
     { id: 'claims',   label: 'Claims',   icon: 'dollar'},
     { id: 'me',       label: 'Me',       icon: 'me'    },
   ];

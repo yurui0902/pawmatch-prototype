@@ -590,6 +590,19 @@ function Pet_Max({ size = 280 }) {
   );
 }
 
+// Photo aliasing: the FEED/SHELTER data still uses legacy keys
+// (miso / clover / olive / max) for stability, but the actual photo files
+// are named after the new pets (satoru / hope / may / bear).  Map legacy
+// keys to the correct photo so direct __pmPetPhotos[key] lookups work
+// from anywhere — PetAvatar, hero banners, etc.
+if (typeof window !== 'undefined' && window.__pmPetPhotos) {
+  const _p = window.__pmPetPhotos;
+  if (_p.satoru && !_p.miso)   _p.miso   = _p.satoru;
+  if (_p.hope   && !_p.clover) _p.clover = _p.hope;
+  if (_p.may    && !_p.olive)  _p.olive  = _p.may;
+  if (_p.bear   && !_p.max)    _p.max    = _p.bear;
+}
+
 // Keys preserved (poppy/miso/clover/olive/max/pepper) so existing references
 // don't break, but every pet's name + breed + kind + photo has been remapped
 // to the real adoption photos the user provided.

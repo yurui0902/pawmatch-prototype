@@ -53,8 +53,8 @@ function VetHomeScreen({ goto, tab, setTab }) {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 18 }}>
-          <VetStatTile label="Draft notes"    value={VET_STATS.draftNotes}    accent={PM.gold}   onClick={() => setTab('record')}/>
-          <VetStatTile label="Pending claims" value={VET_STATS.pendingClaims} accent={PM.coral}  onClick={() => setTab('claims')}/>
+          <VetStatTile label="Draft notes"     value={VET_STATS.draftNotes}    accent={PM.gold}  onClick={() => setTab('record')}/>
+          <VetStatTile label="Claims to file"  value={(CLAIMS || []).filter(c => c.status === 'Vet-approved').length} accent={PM.coral} onClick={() => setTab('claims')}/>
         </div>
 
         {/* Active patients tile */}
