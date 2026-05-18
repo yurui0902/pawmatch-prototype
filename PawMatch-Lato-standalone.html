@@ -3191,7 +3191,11 @@ function ChatScreen({ goto, tab, setTab }) {
   ];
   return (
     <div style={{ position: 'absolute', inset: 0, background: PM.cream, display: 'flex', flexDirection: 'column' }}>
-      <TopBar title="Chat" large subtitle="Conversations with shelters & vets"/>
+      <TopBar
+        title="Chat" large
+        subtitle="Conversations with shelters & vets"
+        right={typeof ResetDemoButton === 'function' ? <ResetDemoButton/> : null}
+      />
 
       <div style={{ padding: '0 20px 8px' }}>
         <div style={{ display: 'flex', gap: 6, padding: 4, background: PM.white, borderRadius: 16, border: `1px solid ${PM.line}` }}>
