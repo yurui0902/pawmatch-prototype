@@ -1546,21 +1546,20 @@ function OnboardingScreen({ onContinue, onSkip }) {
       <div style={{ flex: 1, overflow: 'auto', padding: '24px 20px 24px' }}>
         <OBSection label="Pet type" hint="Pick one or more">
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <OBCardChoice icon={<PhotoCircle key="dog" src={window.__pmPetPhotos && window.__pmPetPhotos.poppy} size={70}/>} label="Dogs"
+            <OBCardChoice label="Dogs"
+              bgImage={(window.__pmPetPhotos && window.__pmPetPhotos.poppy) || 'assets/pets/poppy.jpg'}
+              bgPosition="center 32%"
               selected={petTypes.includes('dogs')}
               onClick={() => toggle(petTypes, setPetTypes, 'dogs')} accent={PM.coral}/>
-            <OBCardChoice icon={<PhotoCircle key="cat" src={window.__pmPetPhotos && window.__pmPetPhotos.may} size={70}/>} label="Cats"
+            <OBCardChoice label="Cats"
+              bgImage={(window.__pmPetPhotos && window.__pmPetPhotos.may) || 'assets/pets/may.jpg'}
+              bgPosition="center 35%"
               selected={petTypes.includes('cats')}
               onClick={() => toggle(petTypes, setPetTypes, 'cats')} accent={PM.gold}/>
-            <OBCardChoice
-              icon={
-                <div style={{
-                  width: 70, height: 70, borderRadius: '50%', overflow: 'hidden',
-                  background: `url("${window.__PAWMATCH_SPLASH_HERO__ || 'assets/splash-hero.jpg'}") 50% 58% / 165% auto no-repeat #FFFFFF`,
-                  boxShadow: '0 4px 10px rgba(20,20,40,0.10)',
-                }}/>
-              }
-              label="Both cats and dogs"
+            <OBCardChoice label="Both cats and dogs"
+              bgImage={window.__PAWMATCH_SPLASH_HERO__ || 'assets/splash-hero.jpg'}
+              bgPosition="center 62%"
+              bgSize="120% auto"
               selected={petTypes.includes('both')}
               onClick={() => toggle(petTypes, setPetTypes, 'both')} accent={PM.violet}
               wide
@@ -1604,30 +1603,43 @@ function OBSection({ label, hint, children }) {
   );
 }
 
-function OBCardChoice({ icon, label, selected, onClick, accent, wide }) {
+function OBCardChoice({ label, selected, onClick, accent, wide, bgImage, bgPosition = 'center', bgSize = 'cover' }) {
   return (
     <button onClick={onClick} style={{
       gridColumn: wide ? '1 / -1' : 'auto',
-      height: 130, borderRadius: 22,
-      background: selected ? PM.night : PM.white,
-      color: selected ? PM.cream : PM.night,
-      border: 'none', cursor: 'pointer', padding: 14,
-      display: 'flex', flexDirection: 'column', justifyContent: 'space-between', alignItems: 'flex-start',
+      height: 140, borderRadius: 18,
+      background: bgImage ? `url("${bgImage}") ${bgPosition} / ${bgSize} no-repeat #F3F3F3` : (selected ? PM.night : PM.white),
+      border: selected ? `3px solid ${accent}` : `1px solid ${PM.line}`,
+      cursor: 'pointer', padding: 0,
+      display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'flex-start',
       transition: 'all 0.2s', position: 'relative', overflow: 'hidden',
-      boxShadow: selected ? `0 8px 24px ${accent}33` : '0 1px 3px rgba(20,20,40,0.04)',
+      boxShadow: selected ? `0 10px 28px ${accent}55` : '0 1px 3px rgba(20,20,40,0.06)',
     }}>
-      <div style={{ position: 'absolute', top: 8, right: 8, opacity: 0.85 }}>
-        {icon}
-      </div>
-      {selected && <div style={{
-        position: 'absolute', top: 12, left: 12,
-        width: 22, height: 22, borderRadius: 11, background: accent,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>
-        <svg width="11" height="11" viewBox="0 0 11 11"><path d="M2 6 L 4.5 8.5 L 9 3" stroke={PM.cream} strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
-      </div>}
-      <div style={{ flex: 1 }}/>
-      <div style={{ fontFamily: FONT_BODY, fontSize: 15, fontWeight: 600 }}>{label}</div>
+      {/* gradient overlay so the label reads against any photo */}
+      {bgImage && (
+        <div style={{
+          position: 'absolute', inset: 0, pointerEvents: 'none',
+          background: 'linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(0,0,0,0.62) 100%)',
+        }}/>
+      )}
+      {selected && (
+        <div style={{
+          position: 'absolute', top: 10, right: 10, zIndex: 2,
+          width: 28, height: 28, borderRadius: 14, background: accent,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: `0 4px 10px ${accent}99`,
+        }}>
+          <svg width="13" height="13" viewBox="0 0 11 11"><path d="M2 6 L 4.5 8.5 L 9 3" stroke="#FFF" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        </div>
+      )}
+      <div style={{
+        position: 'relative', zIndex: 1,
+        padding: '14px 16px',
+        fontFamily: FONT_BODY, fontSize: 16, fontWeight: 700,
+        color: bgImage ? '#FFF' : (selected ? PM.cream : PM.night),
+        textShadow: bgImage ? '0 2px 8px rgba(0,0,0,0.55)' : 'none',
+        letterSpacing: 0.1,
+      }}>{label}</div>
     </button>
   );
 }
